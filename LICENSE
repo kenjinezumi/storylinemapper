@@ -1,0 +1,33 @@
+
+### Tests
+
+1. **`test_network.py`**:
+
+```python
+# tests/test_network.py
+
+import unittest
+from storylinemapper import extract_characters, generate_network, generate_network_iframe
+
+class TestCharacterNetwork(unittest.TestCase):
+
+    def test_extract_characters(self):
+        text = "Alice and Bob went to the market. Alice bought an apple."
+        characters = extract_characters(text)
+        self.assertIn("Alice", characters)
+        self.assertIn("Bob", characters)
+
+    def test_generate_network(self):
+        text = "Alice and Bob went to the market. Alice bought an apple."
+        G = generate_network(text)
+        self.assertTrue(len(G.nodes) > 0)
+        self.assertTrue(len(G.edges) > 0)
+
+    def test_generate_network_iframe(self):
+        text = "Alice and Bob went to the market. Alice bought an apple."
+        G = generate_network(text)
+        iframe_html = generate_network_iframe(G)
+        self.assertIn("<html>", iframe_html)
+
+if __name__ == "__main__":
+    unittest.main()
