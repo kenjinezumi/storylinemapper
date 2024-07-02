@@ -21,7 +21,13 @@ var link = svg.append("g")
     .on("click", function(event, d) {
         d3.selectAll(".link").style("stroke", "#999");
         d3.select(this).style("stroke", "#d62728");
-        showTooltip(d, event.pageX, event.pageY, "actions: " + d.actions);
+        showTooltip(d, event.pageX, event.pageY, "Actions: " + d.actions);
+    })
+    .on("mouseover", function(event, d) {
+        showTooltip(d, event.pageX, event.pageY, "Actions: " + d.actions);
+    })
+    .on("mouseout", function(d) {
+        hideTooltip();
     });
 
 var node = svg.append("g")
@@ -39,6 +45,12 @@ var node = svg.append("g")
         d3.selectAll(".node").style("stroke", "#fff");
         d3.select(this).style("stroke", "#d62728");
         showTooltip(d, event.pageX, event.pageY, "Node: " + d.id);
+    })
+    .on("mouseover", function(event, d) {
+        showTooltip(d, event.pageX, event.pageY, "Node: " + d.id);
+    })
+    .on("mouseout", function(d) {
+        hideTooltip();
     });
 
 var labels = svg.append("g")
@@ -105,10 +117,14 @@ function showTooltip(d, x, y, text) {
            .html(text);
 }
 
+function hideTooltip() {
+    d3.select(".tooltip").style("opacity", 0);
+}
+
 d3.select("body").on("click", function(event) {
     if (event.target.tagName !== "circle" && event.target.tagName !== "line") {
         d3.selectAll(".link").style("stroke", "#999");
         d3.selectAll(".node").style("stroke", "#fff");
-        d3.select(".tooltip").style("opacity", 0);
+        hideTooltip();
     }
 });
