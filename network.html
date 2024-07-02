@@ -32,9 +32,10 @@
     </style>
 </head>
 <body>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script>
-        var data = {"nodes": [{"id": "Alice"}, {"id": "Bob"}], "links": [{"source": "Alice", "target": "Bob", "actions": "go"}]};
+    <div style="width: 100px; height: 100px;">
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script>
+            var data = {"nodes": [{"id": "Alice"}, {"id": "Bob"}], "links": [{"source": "Alice", "target": "Bob", "actions": "go"}]};
 
 var width = 960,
     height = 600;
@@ -165,7 +166,8 @@ d3.select("body").on("click", function(event) {
     }
 });
 
-    </script>
+        </script>
+    </div>
 </body>
 </html>
     

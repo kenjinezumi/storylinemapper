@@ -46,7 +46,7 @@ def load_js(script: str, json_data: str, show_actions: bool) -> str:
         js_code = file.read()
     return js_code.replace("{json_data}", json_data).replace("{show_actions}", str(show_actions).lower())
 
-def generate_network_iframe(G: nx.Graph, title: str = "Entity Relation Network", style: str = "style1", script: str = "script1", show_actions: bool = False) -> str:
+def generate_network_iframe(G: nx.Graph, title: str = "Entity Relation Network", style: str = "style1", script: str = "script1", show_actions: bool = False, width: str = "960px", height: str = "600px") -> str:
     nodes = [{"id": node} for node in G.nodes()]
     links = [{"source": u, "target": v, "actions": data["actions"]} for u, v, data in G.edges(data=True)]
     
@@ -69,10 +69,12 @@ def generate_network_iframe(G: nx.Graph, title: str = "Entity Relation Network",
     </style>
 </head>
 <body>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script>
-        {js_content}
-    </script>
+    <div style="width: {width}; height: {height};">
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script>
+            {js_content}
+        </script>
+    </div>
 </body>
 </html>
     """
