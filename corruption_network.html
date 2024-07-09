@@ -35,9 +35,9 @@
     <div style="width: 1200px; height: 800px;">
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <script>
-            console.log('Data: {"nodes": [{"id": "Mickey Mouse", "size": 3}, {"id": "Trump", "size": 3}, {"id": "Shinzo Abe", "size": 2}, {"id": "Putin", "size": 4}, {"id": "Macron", "size": 2}, {"id": "Merkel", "size": 2}], "links": [{"source": "Mickey Mouse", "target": "Trump", "actions": "facilitate, involve"}, {"source": "Mickey Mouse", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Trump", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Putin", "target": "Mickey Mouse", "actions": "play, give"}, {"source": "Putin", "target": "Trump", "actions": "observe"}, {"source": "Macron", "target": "Merkel", "actions": "check"}, {"source": "Macron", "target": "Putin", "actions": "check"}, {"source": "Merkel", "target": "Putin", "actions": "check"}]}');
+            console.log('Data: {"nodes": [{"id": "Mickey Mouse", "size": 3, "count": 3}, {"id": "Trump", "size": 3, "count": 3}, {"id": "Shinzo Abe", "size": 2, "count": 2}, {"id": "Putin", "size": 4, "count": 4}, {"id": "Macron", "size": 2, "count": 2}, {"id": "Merkel", "size": 2, "count": 2}], "links": [{"source": "Mickey Mouse", "target": "Trump", "actions": "facilitate, involve"}, {"source": "Mickey Mouse", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Trump", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Putin", "target": "Mickey Mouse", "actions": "play, give"}, {"source": "Putin", "target": "Trump", "actions": "observe"}, {"source": "Macron", "target": "Merkel", "actions": "check"}, {"source": "Macron", "target": "Putin", "actions": "check"}, {"source": "Merkel", "target": "Putin", "actions": "check"}]}');
             console.log('Show Actions: True');
-            const data = {"nodes": [{"id": "Mickey Mouse", "size": 3}, {"id": "Trump", "size": 3}, {"id": "Shinzo Abe", "size": 2}, {"id": "Putin", "size": 4}, {"id": "Macron", "size": 2}, {"id": "Merkel", "size": 2}], "links": [{"source": "Mickey Mouse", "target": "Trump", "actions": "facilitate, involve"}, {"source": "Mickey Mouse", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Trump", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Putin", "target": "Mickey Mouse", "actions": "play, give"}, {"source": "Putin", "target": "Trump", "actions": "observe"}, {"source": "Macron", "target": "Merkel", "actions": "check"}, {"source": "Macron", "target": "Putin", "actions": "check"}, {"source": "Merkel", "target": "Putin", "actions": "check"}]};
+            const data = {"nodes": [{"id": "Mickey Mouse", "size": 3, "count": 3}, {"id": "Trump", "size": 3, "count": 3}, {"id": "Shinzo Abe", "size": 2, "count": 2}, {"id": "Putin", "size": 4, "count": 4}, {"id": "Macron", "size": 2, "count": 2}, {"id": "Merkel", "size": 2, "count": 2}], "links": [{"source": "Mickey Mouse", "target": "Trump", "actions": "facilitate, involve"}, {"source": "Mickey Mouse", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Trump", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Putin", "target": "Mickey Mouse", "actions": "play, give"}, {"source": "Putin", "target": "Trump", "actions": "observe"}, {"source": "Macron", "target": "Merkel", "actions": "check"}, {"source": "Macron", "target": "Putin", "actions": "check"}, {"source": "Merkel", "target": "Putin", "actions": "check"}]};
 const width = 1200;
 const height = 800;
 const showActions = true;
@@ -143,7 +143,7 @@ console.log("Tooltip div created");
 node.on("mouseover", (event, d) => {
         tooltip
             .style("opacity", 1)
-            .html(d.id)
+            .html(`${d.id} (Count: ${d.count})`)
             .style("left", (event.pageX + 10) + "px")
             .style("top", (event.pageY - 10) + "px");
     })
@@ -220,7 +220,6 @@ function dragended(event, d) {
     d.fx = null;
     d.fy = null;
 }
-
 console.log("Drag functions added");
 
         </script>

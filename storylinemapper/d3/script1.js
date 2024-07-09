@@ -104,7 +104,7 @@ console.log("Tooltip div created");
 node.on("mouseover", (event, d) => {
         tooltip
             .style("opacity", 1)
-            .html(d.id)
+            .html(`${d.id} (Count: ${d.count})`)
             .style("left", (event.pageX + 10) + "px")
             .style("top", (event.pageY - 10) + "px");
     })
@@ -181,5 +181,4 @@ function dragended(event, d) {
     d.fx = null;
     d.fy = null;
 }
-
 console.log("Drag functions added");
