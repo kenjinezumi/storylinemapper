@@ -35,9 +35,9 @@
     <div style="width: 1200px; height: 800px;">
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <script>
-            console.log('Data: {"nodes": [{"id": "Mickey Mouse"}, {"id": "Trump"}, {"id": "Shinzo Abe"}, {"id": "Putin"}, {"id": "Macron"}, {"id": "Merkel"}], "links": [{"source": "Mickey Mouse", "target": "Trump", "actions": "facilitate, involve"}, {"source": "Mickey Mouse", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Trump", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Putin", "target": "Mickey Mouse", "actions": "play, give"}, {"source": "Putin", "target": "Trump", "actions": "observe"}, {"source": "Macron", "target": "Merkel", "actions": "check"}, {"source": "Macron", "target": "Putin", "actions": "check"}, {"source": "Merkel", "target": "Putin", "actions": "check"}]}');
+            console.log('Data: {"nodes": [{"id": "Mickey Mouse", "size": 3}, {"id": "Trump", "size": 3}, {"id": "Shinzo Abe", "size": 2}, {"id": "Putin", "size": 4}, {"id": "Macron", "size": 2}, {"id": "Merkel", "size": 2}], "links": [{"source": "Mickey Mouse", "target": "Trump", "actions": "facilitate, involve"}, {"source": "Mickey Mouse", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Trump", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Putin", "target": "Mickey Mouse", "actions": "play, give"}, {"source": "Putin", "target": "Trump", "actions": "observe"}, {"source": "Macron", "target": "Merkel", "actions": "check"}, {"source": "Macron", "target": "Putin", "actions": "check"}, {"source": "Merkel", "target": "Putin", "actions": "check"}]}');
             console.log('Show Actions: True');
-            const data = {"nodes": [{"id": "Mickey Mouse"}, {"id": "Trump"}, {"id": "Shinzo Abe"}, {"id": "Putin"}, {"id": "Macron"}, {"id": "Merkel"}], "links": [{"source": "Mickey Mouse", "target": "Trump", "actions": "facilitate, involve"}, {"source": "Mickey Mouse", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Trump", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Putin", "target": "Mickey Mouse", "actions": "play, give"}, {"source": "Putin", "target": "Trump", "actions": "observe"}, {"source": "Macron", "target": "Merkel", "actions": "check"}, {"source": "Macron", "target": "Putin", "actions": "check"}, {"source": "Merkel", "target": "Putin", "actions": "check"}]};
+            const data = {"nodes": [{"id": "Mickey Mouse", "size": 3}, {"id": "Trump", "size": 3}, {"id": "Shinzo Abe", "size": 2}, {"id": "Putin", "size": 4}, {"id": "Macron", "size": 2}, {"id": "Merkel", "size": 2}], "links": [{"source": "Mickey Mouse", "target": "Trump", "actions": "facilitate, involve"}, {"source": "Mickey Mouse", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Trump", "target": "Shinzo Abe", "actions": "facilitate, involve"}, {"source": "Putin", "target": "Mickey Mouse", "actions": "play, give"}, {"source": "Putin", "target": "Trump", "actions": "observe"}, {"source": "Macron", "target": "Merkel", "actions": "check"}, {"source": "Macron", "target": "Putin", "actions": "check"}, {"source": "Merkel", "target": "Putin", "actions": "check"}]};
 const width = 1200;
 const height = 800;
 const showActions = true;
@@ -79,7 +79,7 @@ const simulation = d3.forceSimulation(data.nodes)
     .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
     .force("charge", d3.forceManyBody().strength(-300))
     .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius(50));
+    .force("collision", d3.forceCollide().radius(d => d.size * 2));
 
 console.log("Simulation created");
 
@@ -103,7 +103,7 @@ const node = svg.append("g")
     .data(data.nodes)
     .enter()
     .append("circle")
-    .attr("r", 10)
+    .attr("r", d => d.size * 2)
     .attr("fill", "#69b3a2")
     .call(d3.drag()
         .on("start", dragstarted)

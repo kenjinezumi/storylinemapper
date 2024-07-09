@@ -40,7 +40,7 @@ const simulation = d3.forceSimulation(data.nodes)
     .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
     .force("charge", d3.forceManyBody().strength(-300))
     .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius(50));
+    .force("collision", d3.forceCollide().radius(d => d.size * 2));
 
 console.log("Simulation created");
 
@@ -64,7 +64,7 @@ const node = svg.append("g")
     .data(data.nodes)
     .enter()
     .append("circle")
-    .attr("r", 10)
+    .attr("r", d => d.size * 2)
     .attr("fill", "#69b3a2")
     .call(d3.drag()
         .on("start", dragstarted)
