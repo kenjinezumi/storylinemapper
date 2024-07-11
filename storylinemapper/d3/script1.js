@@ -12,7 +12,7 @@ console.log("Show Actions:", showActions);
 const svg = d3.select("body")
     .append("svg")
     .attr("width", "100%")
-    .attr("height","100%")
+    .attr("height", "100%")
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("preserveAspectRatio", "xMidYMid meet");
 
@@ -239,34 +239,64 @@ function updateCommunityLabels() {
 console.log("Update community labels added");
 
 // Add filters and design options if present
-if ({design_options}) {
-    function filterNodes() {
-        // Implement node filtering logic
-        console.log("Filter nodes");
-    }
+function filterNodes() {
+    const communityFilter = document.getElementById("community-filter").value;
+    const excludeNodes = document.getElementById("exclude-nodes").value.split(",").map(d => d.trim());
 
-    function updateDesign() {
-        // Implement design update logic
-        console.log("Update design");
-    }
+    node.style("opacity", d => (communityFilter === "all" || d.community === +communityFilter) && !excludeNodes.includes(d.id) ? 1 : 0.1);
+    link.style("opacity", d => (communityFilter === "all" || d.source.community === +communityFilter) && (communityFilter === "all" || d.target.community === +communityFilter) && !excludeNodes.includes(d.source.id) && !excludeNodes.includes(d.target.id) ? 1 : 0.1);
+    label.style("opacity", d => (communityFilter === "all" || d.community === +communityFilter) && !excludeNodes.includes(d.id) ? 1 : 0.1);
+}
 
-    function exportNetwork() {
-        // Implement export logic
-        const svg = document.querySelector("svg");
-        const serializer = new XMLSerializer();
-        const source = serializer.serializeToString(svg);
+function updateDesign() {
+    const nodeColor = document.getElementById("node-color-picker").value;
+    const nodeSize = +document.getElementById("node-size-slider").value;
+    const linkWidth = +document.getElementById("link-width-slider").value;
+    const forceType = document.getElementById("force-type-selector").value;
+
+    node.attr("fill", nodeColor)
+        .attr("r", nodeSize);
+
+    link.attr("stroke-width", linkWidth);
+
+    simulation.force("charge").strength(forceType === "strong" ? -50 : forceType === "weak" ? -10 : -30);
+    simulation.alpha(1).restart();
+}
+
+function exportNetwork(format) {
+    const svgElement = document.querySelector("svg");
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svgElement);
+
+    if (format === 'svg') {
         const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
         link.download = "network.svg";
         link.click();
+    } else if (format === 'png') {
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        const img = new Image();
+        img.onload = function() {
+            canvas.width = svgElement.clientWidth;
+            canvas.height = svgElement.clientHeight;
+            context.drawImage(img, 0, 0);
+            const url = canvas.toDataURL("image/png");
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "network.png";
+            link.click();
+        };
+        img.src = 'data:image/svg+xml;base64,' + btoa(source);
     }
-
-    // Add event listeners for filters and design options
-    document.getElementById("filter-btn").addEventListener("click", filterNodes);
-    document.getElementById("update-design-btn").addEventListener("click", updateDesign);
-    document.getElementById("export-btn").addEventListener("click", exportNetwork);
-
-    console.log("Added filters and design options");
 }
+
+// Add event listeners for filters and design options
+document.getElementById("filter-btn").addEventListener("click", filterNodes);
+document.getElementById("update-design-btn").addEventListener("click", updateDesign);
+document.getElementById("export-svg-btn").addEventListener("click", function() { exportNetwork('svg'); });
+document.getElementById("export-png-btn").addEventListener("click", function() { exportNetwork('png'); });
+
+console.log("Added filters and design options");

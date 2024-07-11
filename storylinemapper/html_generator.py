@@ -15,30 +15,64 @@ def load_js(script: str, json_data: str, show_actions: bool, width: int, height:
         js_code += """
         // Add filters and design options
         function filterNodes() {
-            // Implement node filtering logic
+            const communityFilter = document.getElementById("community-filter").value;
+            const excludeNodes = document.getElementById("exclude-nodes").value.split(",").map(d => d.trim());
+
+            node.style("opacity", d => (communityFilter === "all" || d.community === +communityFilter) && !excludeNodes.includes(d.id) ? 1 : 0.1);
+            link.style("opacity", d => (communityFilter === "all" || d.source.community === +communityFilter) && (communityFilter === "all" || d.target.community === +communityFilter) && !excludeNodes.includes(d.source.id) && !excludeNodes.includes(d.target.id) ? 1 : 0.1);
+            label.style("opacity", d => (communityFilter === "all" || d.community === +communityFilter) && !excludeNodes.includes(d.id) ? 1 : 0.1);
         }
 
         function updateDesign() {
-            // Implement design update logic
+            const nodeColor = document.getElementById("node-color-picker").value;
+            const nodeSize = +document.getElementById("node-size-slider").value;
+            const linkWidth = +document.getElementById("link-width-slider").value;
+            const forceType = document.getElementById("force-type-selector").value;
+
+            node.attr("fill", nodeColor)
+                .attr("r", nodeSize);
+
+            link.attr("stroke-width", linkWidth);
+
+            simulation.force("charge").strength(forceType === "strong" ? -50 : forceType === "weak" ? -10 : -30);
+            simulation.alpha(1).restart();
         }
 
-        function exportNetwork() {
-            // Implement export logic
-            const svg = document.querySelector("svg");
+        function exportNetwork(format) {
+            const svgElement = document.querySelector("svg");
             const serializer = new XMLSerializer();
-            const source = serializer.serializeToString(svg);
-            const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "network.svg";
-            link.click();
+            const source = serializer.serializeToString(svgElement);
+
+            if (format === 'svg') {
+                const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "network.svg";
+                link.click();
+            } else if (format === 'png') {
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d");
+                const img = new Image();
+                img.onload = function() {
+                    canvas.width = svgElement.clientWidth;
+                    canvas.height = svgElement.clientHeight;
+                    context.drawImage(img, 0, 0);
+                    const url = canvas.toDataURL("image/png");
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = "network.png";
+                    link.click();
+                };
+                img.src = 'data:image/svg+xml;base64,' + btoa(source);
+            }
         }
 
         // Add event listeners for filters and design options
         document.getElementById("filter-btn").addEventListener("click", filterNodes);
         document.getElementById("update-design-btn").addEventListener("click", updateDesign);
-        document.getElementById("export-btn").addEventListener("click", exportNetwork);
+        document.getElementById("export-svg-btn").addEventListener("click", function() { exportNetwork('svg'); });
+        document.getElementById("export-png-btn").addEventListener("click", function() { exportNetwork('png'); });
         """
     return js_code
 
@@ -57,12 +91,27 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options)
 
     if design_options:
-        additional_html = """
+        community_options = "\n".join([f'<option value="{community}">{name}</option>' for community, name in community_names.items()])
+        additional_html = f"""
         <div>
             <button id="filter-btn">Filter Nodes</button>
             <button id="update-design-btn">Update Design</button>
-            <button id="export-btn">Export Network</button>
-            <!-- Add more UI elements for filters and design options as needed -->
+            <button id="export-svg-btn">Export as SVG</button>
+            <button id="export-png-btn">Export as PNG</button>
+            <input type="color" id="node-color-picker" value="#69b3a2"> Node Color
+            <input type="range" id="node-size-slider" min="1" max="20" value="10"> Node Size
+            <input type="range" id="link-width-slider" min="1" max="10" value="1"> Link Width
+            <select id="force-type-selector">
+                <option value="default">Default Forces</option>
+                <option value="strong">Strong Forces</option>
+                <option value="weak">Weak Forces</option>
+            </select>
+            <select id="community-filter">
+                <option value="all">All Communities</option>
+                {community_options}
+            </select>
+            <input type="text" id="exclude-nodes" placeholder="Exclude Nodes (comma separated)">
+            <input type="text" id="node-comments" placeholder="Add Comment to Node">
         </div>
         """
     else:
