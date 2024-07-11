@@ -2,19 +2,38 @@
 
 import json
 import os
+from storylinemapper.network_analysis.metrics import calculate_all_metrics
 
 def load_css(style: str) -> str:
     path = os.path.join(os.path.dirname(__file__), "styles", style + ".css")
     with open(path, "r") as file:
         return file.read()
 
-def load_js(script: str, json_data: str, show_actions: bool, width: int, height: int) -> str:
+def load_js(script: str, json_data: str, show_actions: bool, width: int, height: int, design_options: bool, metrics: dict) -> str:
     path = os.path.join(os.path.dirname(__file__), "d3", script + ".js")
     with open(path, "r") as file:
         js_code = file.read()
-    return js_code.replace("{json_data}", json_data).replace("{show_actions}", str(show_actions).lower()).replace("{width}", str(width)).replace("{height}", str(height))
+    js_code = js_code.replace("{json_data}", json_data).replace("{show_actions}", str(show_actions).lower()).replace("{width}", str(width)).replace("{height}", str(height))
+    if design_options:
+        metrics_json = json.dumps(metrics)
+        js_code += f"""
+        const metrics = {metrics_json};
+        console.log("Metrics:", metrics);
 
-def generate_html(G, partition: dict, community_names: dict, title: str = "Entity Relation Network", style: str = "style1", script: str = "script1", show_actions: bool = False, width: str = "960px", height: str = "600px") -> str:
+        // Add metrics display logic
+        function displayMetrics() {{
+            const metricsDiv = document.getElementById("metrics");
+            metricsDiv.innerHTML = "<h3>Network Metrics</h3>";
+            for (const [key, value] of Object.entries(metrics)) {{
+                metricsDiv.innerHTML += `<p><strong>${{key}}:</strong> ${{JSON.stringify(value)}}</p>`;
+            }}
+        }}
+        
+        displayMetrics();
+        """
+    return js_code
+
+def generate_html(G, partition: dict, community_names: dict, title: str = "Entity Relation Network", style: str = "style1", script: str = "script1", show_actions: bool = False, width: str = "960px", height: str = "600px", design_options: bool = False) -> str:
     nodes = [{"id": node, "size": data["size"], "count": data["size"], "community": partition[node]} for node, data in G.nodes(data=True)]
     links = [{"source": u, "target": v, "actions": data["actions"]} for u, v, data in G.edges(data=True)]
     
@@ -26,7 +45,37 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
 
     json_data = json.dumps(data)
     css_content = load_css(style)
-    js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]))
+
+    if design_options:
+        metrics = calculate_all_metrics(G)
+        js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options, metrics)
+        community_options = "\n".join([f'<option value="{community}">{name}</option>' for community, name in community_names.items()])
+        additional_html = f"""
+        <div>
+            <button id="filter-btn">Filter Nodes</button>
+            <button id="update-design-btn">Update Design</button>
+            <button id="export-svg-btn">Export as SVG</button>
+            <button id="export-png-btn">Export as PNG</button>
+            <input type="color" id="node-color-picker" value="#69b3a2"> Node Color
+            <input type="range" id="node-size-slider" min="1" max="20" value="10"> Node Size
+            <input type="range" id="link-width-slider" min="1" max="10" value="1"> Link Width
+            <select id="force-type-selector">
+                <option value="default">Default Forces</option>
+                <option value="strong">Strong Forces</option>
+                <option value="weak">Weak Forces</option>
+            </select>
+            <select id="community-filter">
+                <option value="all">All Communities</option>
+                {community_options}
+            </select>
+            <input type="text" id="exclude-nodes" placeholder="Exclude Nodes (comma separated)">
+            <input type="text" id="node-comments" placeholder="Add Comment to Node">
+        </div>
+        <div id="metrics"></div>
+        """
+    else:
+        js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options, {})
+        additional_html = ""
 
     html_template = f"""
 <!DOCTYPE html>
@@ -37,7 +86,8 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         {css_content}
     </style>
 </head>
-<body  style="width: {width}; height: {height};">
+<body style="width: {width}; height: {height};">
+    {additional_html}
     <div>
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <script>
