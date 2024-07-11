@@ -37,8 +37,8 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         {css_content}
     </style>
 </head>
-<body>
-    <div style="width: {width}; height: {height};">
+<body  style="width: {width}; height: {height};">
+    <div>
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <script>
             console.log('Data: {json_data}');

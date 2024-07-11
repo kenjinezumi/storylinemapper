@@ -1,8 +1,8 @@
 const data = {json_data};
-const width = {width};
-const height = {height};
-const showActions = {show_actions};
 
+const showActions = {show_actions};
+const width = window.innerWidth;
+const height = window.innerHeight;
 console.log("Data:", data);
 console.log("Width:", width);
 console.log("Height:", height);
@@ -11,8 +11,8 @@ console.log("Show Actions:", showActions);
 // Create SVG
 const svg = d3.select("body")
     .append("svg")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("width", "100%")
+    .attr("height","100%")
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("preserveAspectRatio", "xMidYMid meet");
 
