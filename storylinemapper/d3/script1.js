@@ -35,6 +35,9 @@ svg.append("defs").append("marker")
 
 console.log("Arrowhead marker added");
 
+// Color scale for communities
+const color = d3.scaleOrdinal(d3.schemeCategory10);
+
 // Simulation
 const simulation = d3.forceSimulation(data.nodes)
     .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
@@ -65,7 +68,7 @@ const node = svg.append("g")
     .enter()
     .append("circle")
     .attr("r", d => d.size * 2)
-    .attr("fill", "#69b3a2")
+    .attr("fill", d => color(d.community))
     .call(d3.drag()
         .on("start", dragstarted)
         .on("drag", dragged)
@@ -104,7 +107,7 @@ console.log("Tooltip div created");
 node.on("mouseover", (event, d) => {
         tooltip
             .style("opacity", 1)
-            .html(`${d.id} (Count: ${d.count})`)
+            .html(`${d.id} (Count: ${d.count}, Community: ${d.community})`)
             .style("left", (event.pageX + 10) + "px")
             .style("top", (event.pageY - 10) + "px");
     })
@@ -181,4 +184,5 @@ function dragended(event, d) {
     d.fx = null;
     d.fy = null;
 }
+
 console.log("Drag functions added");
