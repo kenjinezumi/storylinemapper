@@ -1,3 +1,5 @@
+// script1.js
+
 const data = {json_data};
 const width = {width};
 const height = {height};
@@ -45,6 +47,24 @@ const communities = d3.groups(data.nodes, d => d.community)
         x: Math.random() * width,
         y: Math.random() * height
     }));
+
+// Add community labels
+const communityLabels = svg.append("g")
+    .attr("class", "community-labels")
+    .selectAll("text")
+    .data(communities)
+    .enter()
+    .append("text")
+    .attr("class", "community-label")
+    .attr("x", d => d.x)
+    .attr("y", d => d.y)
+    .attr("dy", -10)
+    .text(d => data.community_names[d.id])
+    .style("font-size", "16px")
+    .style("font-weight", "bold")
+    .style("fill", "#555");
+
+console.log("Community labels added");
 
 // Simulation
 const simulation = d3.forceSimulation(data.nodes)
@@ -166,6 +186,10 @@ function ticked() {
         .attr("cy", d => d.y = Math.max(10, Math.min(height - 10, d.y)));
 
     label
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+
+    communityLabels
         .attr("x", d => d.x)
         .attr("y", d => d.y);
 

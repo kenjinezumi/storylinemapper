@@ -1,8 +1,11 @@
+# community.py
+
 import networkx as nx
 import community as community_louvain
 from infomap import Infomap
 import itertools
 import spacy
+from collections import Counter
 from typing import List, Tuple
 
 # Load the spaCy model
@@ -98,3 +101,20 @@ def run_community_detection(G: nx.Graph, method: str, **kwargs) -> dict:
         return asyn_fluidc_method(G, k)
     else:
         raise ValueError(f"Unsupported method: {method}")
+
+def name_communities(G: nx.Graph, partition: dict) -> dict:
+    """Name communities based on most common entities or words in each community"""
+    community_texts = {}
+    for node, community in partition.items():
+        if community not in community_texts:
+            community_texts[community] = []
+        community_texts[community].append(node)
+
+    community_names = {}
+    for community, nodes in community_texts.items():
+        words = [word for node in nodes for word in node.split()]
+        most_common_words = Counter(words).most_common()
+        community_name = " ".join([word for word, count in most_common_words[:3]])
+        community_names[community] = community_name
+
+    return community_names

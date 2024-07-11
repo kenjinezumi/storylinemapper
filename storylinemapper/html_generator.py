@@ -1,3 +1,5 @@
+# html_generator.py
+
 import json
 import os
 
@@ -12,13 +14,14 @@ def load_js(script: str, json_data: str, show_actions: bool, width: int, height:
         js_code = file.read()
     return js_code.replace("{json_data}", json_data).replace("{show_actions}", str(show_actions).lower()).replace("{width}", str(width)).replace("{height}", str(height))
 
-def generate_html(G, partition: dict, title: str = "Entity Relation Network", style: str = "style1", script: str = "script1", show_actions: bool = False, width: str = "960px", height: str = "600px") -> str:
+def generate_html(G, partition: dict, community_names: dict, title: str = "Entity Relation Network", style: str = "style1", script: str = "script1", show_actions: bool = False, width: str = "960px", height: str = "600px") -> str:
     nodes = [{"id": node, "size": data["size"], "count": data["size"], "community": partition[node]} for node, data in G.nodes(data=True)]
     links = [{"source": u, "target": v, "actions": data["actions"]} for u, v, data in G.edges(data=True)]
     
     data = {
         "nodes": nodes,
-        "links": links
+        "links": links,
+        "community_names": community_names
     }
 
     json_data = json.dumps(data)

@@ -1,7 +1,9 @@
+# cli.py
+
 import click
 from storylinemapper.network import generate_network
 from storylinemapper.html_generator import generate_html
-from storylinemapper.community import build_network_from_text, run_community_detection
+from storylinemapper.community import build_network_from_text, run_community_detection, name_communities
 
 @click.group()
 def main():
@@ -17,7 +19,7 @@ def main():
 @click.option('--height', default='600px', help='Height of the iframe')
 def network(text, output, show_actions, style, script, width, height):
     G = generate_network(text)
-    html_content = generate_html(G, style=style, script=script, show_actions=show_actions, width=width, height=height)
+    html_content = generate_html(G, {}, {}, style=style, script=script, show_actions=show_actions, width=width, height=height)
     with open(output, 'w') as f:
         f.write(html_content)
     click.echo(f'Network iframe saved to {output}')
@@ -35,7 +37,8 @@ def network(text, output, show_actions, style, script, width, height):
 def community_detection(text, method, k, output, show_actions, style, script, width, height):
     G = build_network_from_text(text)
     partition = run_community_detection(G, method, k=k)
-    html_content = generate_html(G, partition, style=style, script=script, show_actions=show_actions, width=width, height=height)
+    community_names = name_communities(G, partition)
+    html_content = generate_html(G, partition, community_names, style=style, script=script, show_actions=show_actions, width=width, height=height)
     with open(output, 'w') as f:
         f.write(html_content)
     click.echo(f'Community detection network iframe saved to {output}')
