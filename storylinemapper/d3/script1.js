@@ -43,7 +43,8 @@ const simulation = d3.forceSimulation(data.nodes)
     .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
     .force("charge", d3.forceManyBody().strength(-300))
     .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius(d => d.size * 2));
+    .force("collision", d3.forceCollide().radius(d => d.size * 2))
+    .on("tick", ticked);
 
 console.log("Simulation created");
 
@@ -143,7 +144,7 @@ if (showActions) {
 }
 
 // Simulation tick
-simulation.on("tick", () => {
+function ticked() {
     link
         .attr("x1", d => d.source.x)
         .attr("y1", d => d.source.y)
@@ -151,8 +152,8 @@ simulation.on("tick", () => {
         .attr("y2", d => d.target.y);
 
     node
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y);
+        .attr("cx", d => d.x = Math.max(10, Math.min(width - 10, d.x)))
+        .attr("cy", d => d.y = Math.max(10, Math.min(height - 10, d.y)));
 
     label
         .attr("x", d => d.x)
@@ -163,7 +164,7 @@ simulation.on("tick", () => {
             .attr("x", d => (d.source.x + d.target.x) / 2)
             .attr("y", d => (d.source.y + d.target.y) / 2);
     }
-});
+}
 
 console.log("Simulation tick added");
 
