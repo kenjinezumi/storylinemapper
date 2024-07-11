@@ -1,5 +1,3 @@
-# cli.py
-
 import click
 from storylinemapper.network import generate_network
 from storylinemapper.html_generator import generate_html
@@ -17,9 +15,10 @@ def main():
 @click.option('--script', default='script1', help='JavaScript file for visualization')
 @click.option('--width', default='960px', help='Width of the iframe')
 @click.option('--height', default='600px', help='Height of the iframe')
-def network(text, output, show_actions, style, script, width, height):
+@click.option('--design-options', is_flag=True, help='Include design options in the output')
+def network(text, output, show_actions, style, script, width, height, design_options):
     G = generate_network(text)
-    html_content = generate_html(G, {}, {}, style=style, script=script, show_actions=show_actions, width=width, height=height)
+    html_content = generate_html(G, {}, {}, style=style, script=script, show_actions=show_actions, width=width, height=height, design_options=design_options)
     with open(output, 'w') as f:
         f.write(html_content)
     click.echo(f'Network iframe saved to {output}')
@@ -34,11 +33,12 @@ def network(text, output, show_actions, style, script, width, height):
 @click.option('--script', default='script1', help='JavaScript file for visualization')
 @click.option('--width', default='960px', help='Width of the iframe')
 @click.option('--height', default='600px', help='Height of the iframe')
-def community_detection(text, method, k, output, show_actions, style, script, width, height):
+@click.option('--design-options', is_flag=True, help='Include design options in the output')
+def community_detection(text, method, k, output, show_actions, style, script, width, height, design_options):
     G = build_network_from_text(text)
     partition = run_community_detection(G, method, k=k)
     community_names = name_communities(G, partition)
-    html_content = generate_html(G, partition, community_names, style=style, script=script, show_actions=show_actions, width=width, height=height)
+    html_content = generate_html(G, partition, community_names, style=style, script=script, show_actions=show_actions, width=width, height=height, design_options=design_options)
     with open(output, 'w') as f:
         f.write(html_content)
     click.echo(f'Community detection network iframe saved to {output}')

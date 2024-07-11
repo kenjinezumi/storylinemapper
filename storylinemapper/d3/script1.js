@@ -237,3 +237,36 @@ function updateCommunityLabels() {
 }
 
 console.log("Update community labels added");
+
+// Add filters and design options if present
+if ({design_options}) {
+    function filterNodes() {
+        // Implement node filtering logic
+        console.log("Filter nodes");
+    }
+
+    function updateDesign() {
+        // Implement design update logic
+        console.log("Update design");
+    }
+
+    function exportNetwork() {
+        // Implement export logic
+        const svg = document.querySelector("svg");
+        const serializer = new XMLSerializer();
+        const source = serializer.serializeToString(svg);
+        const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "network.svg";
+        link.click();
+    }
+
+    // Add event listeners for filters and design options
+    document.getElementById("filter-btn").addEventListener("click", filterNodes);
+    document.getElementById("update-design-btn").addEventListener("click", updateDesign);
+    document.getElementById("export-btn").addEventListener("click", exportNetwork);
+
+    console.log("Added filters and design options");
+}
