@@ -31,16 +31,47 @@ svg.append("defs").append("marker")
     .append("svg:path")
     .attr("d", "M 0,-5 L 10 ,0 L 0,5")
     .attr("fill", "#999")
-    .style("stroke","none");
+    .style("stroke", "none");
 
 console.log("Arrowhead marker added");
+
+// Color scale for communities
+const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+// Create community centers
+const communities = d3.groups(data.nodes, d => d.community)
+    .map(([, nodes]) => ({
+        id: nodes[0].community,
+        nodes: nodes,
+        x: d3.mean(nodes, n => n.x),
+        y: d3.mean(nodes, n => n.y)
+    }));
+
+// Add community labels
+const communityLabels = svg.append("g")
+    .attr("class", "community-labels")
+    .selectAll("text")
+    .data(communities)
+    .enter()
+    .append("text")
+    .attr("class", "community-label")
+    .attr("x", d => d.x)
+    .attr("y", d => d.y)
+    .attr("dy", -10)
+    .text(d => data.community_names[d.id])
+    .style("font-size", "12px") // Smaller font size
+    .style("font-weight", "normal")
+    .style("fill", "#999") // Less prominent color
+    .style("opacity", 0.7); // Less prominent opacity
+
+console.log("Community labels added");
 
 // Simulation
 const simulation = d3.forceSimulation(data.nodes)
     .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
-    .force("charge", d3.forceManyBody().strength(-300))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collision", d3.forceCollide().radius(d => d.size * 2));
+    .force("charge", d3.forceManyBody().strength(-30))
+    .force("collision", d3.forceCollide().radius(d => d.size * 2 + 5))
+    .on("tick", ticked);
 
 console.log("Simulation created");
 
@@ -51,9 +82,10 @@ const link = svg.append("g")
     .data(data.links)
     .enter()
     .append("line")
-    .attr("stroke-width", 2)
+    .attr("stroke-width", 1) // Reduced stroke width
     .attr("marker-end", "url(#arrowhead)")
-    .style("stroke", "#999");
+    .style("stroke", "#ccc") // Lighter stroke color
+    .style("stroke-opacity", 0.6); // Reduced stroke opacity
 
 console.log("Links added");
 
@@ -65,7 +97,7 @@ const node = svg.append("g")
     .enter()
     .append("circle")
     .attr("r", d => d.size * 2)
-    .attr("fill", "#69b3a2")
+    .attr("fill", d => color(d.community))
     .call(d3.drag()
         .on("start", dragstarted)
         .on("drag", dragged)
@@ -104,7 +136,7 @@ console.log("Tooltip div created");
 node.on("mouseover", (event, d) => {
         tooltip
             .style("opacity", 1)
-            .html(`${d.id} (Count: ${d.count})`)
+            .html(`${d.id} (Count: ${d.count}, Community: ${d.community})`)
             .style("left", (event.pageX + 10) + "px")
             .style("top", (event.pageY - 10) + "px");
     })
@@ -140,7 +172,7 @@ if (showActions) {
 }
 
 // Simulation tick
-simulation.on("tick", () => {
+function ticked() {
     link
         .attr("x1", d => d.source.x)
         .attr("y1", d => d.source.y)
@@ -148,19 +180,15 @@ simulation.on("tick", () => {
         .attr("y2", d => d.target.y);
 
     node
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y);
+        .attr("cx", d => d.x = Math.max(10, Math.min(width - 10, d.x)))
+        .attr("cy", d => d.y = Math.max(10, Math.min(height - 10, d.y)));
 
     label
         .attr("x", d => d.x)
         .attr("y", d => d.y);
 
-    if (showActions) {
-        svg.selectAll(".action-label")
-            .attr("x", d => (d.source.x + d.target.x) / 2)
-            .attr("y", d => (d.source.y + d.target.y) / 2);
-    }
-});
+    updateCommunityLabels();
+}
 
 console.log("Simulation tick added");
 
@@ -181,4 +209,31 @@ function dragended(event, d) {
     d.fx = null;
     d.fy = null;
 }
+
 console.log("Drag functions added");
+
+// Prevent label overlap
+const labelSimulation = d3.forceSimulation(data.nodes)
+    .force("collide", d3.forceCollide().radius(d => d.size * 2 + 15))
+    .on("tick", tickedLabels);
+
+function tickedLabels() {
+    label
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+}
+
+console.log("Label collision simulation added");
+
+function updateCommunityLabels() {
+    communities.forEach(c => {
+        c.x = d3.mean(c.nodes, n => n.x);
+        c.y = d3.mean(c.nodes, n => n.y);
+    });
+
+    communityLabels
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+}
+
+console.log("Update community labels added");

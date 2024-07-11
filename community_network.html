@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        .node {
+    stroke: #fff;
+    stroke-width: 1.5px;
+}
+
+.link {
+    stroke: #999;
+    stroke-opacity: 0.6;
+}
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 8px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+    opacity: 0;
+}
+
+    </style>
+</head>
+<body>
+    <div style="width: 960px; height: 600px;">
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script>
+            console.log('Data: {"nodes": [{"id": "Company A", "size": 3, "count": 3, "community": 0}, {"id": "Bob", "size": 2, "count": 2, "community": 0}, {"id": "Alice", "size": 5, "count": 5, "community": 0}, {"id": "Charlie", "size": 2, "count": 2, "community": 0}, {"id": "Dave", "size": 1, "count": 1, "community": 0}, {"id": "Eve", "size": 2, "count": 2, "community": 0}, {"id": "Tom", "size": 7, "count": 7, "community": 2}, {"id": "Jerry", "size": 6, "count": 6, "community": 2}, {"id": "Spike", "size": 6, "count": 6, "community": 2}, {"id": "Organization Z", "size": 2, "count": 2, "community": 2}, {"id": "Tyke", "size": 5, "count": 5, "community": 2}, {"id": "John", "size": 4, "count": 4, "community": 3}, {"id": "Jane", "size": 4, "count": 4, "community": 3}, {"id": "Tim", "size": 3, "count": 3, "community": 3}, {"id": "Anna", "size": 5, "count": 5, "community": 4}, {"id": "Ben", "size": 5, "count": 5, "community": 4}, {"id": "Group Beta", "size": 2, "count": 2, "community": 4}, {"id": "Clara", "size": 5, "count": 5, "community": 4}, {"id": "Group Gamma", "size": 4, "count": 4, "community": 4}, {"id": "Michael", "size": 6, "count": 6, "community": 1}, {"id": "Sarah", "size": 6, "count": 6, "community": 1}, {"id": "Division II", "size": 2, "count": 2, "community": 1}, {"id": "Mike", "size": 5, "count": 5, "community": 1}, {"id": "Division III", "size": 2, "count": 2, "community": 1}], "links": [{"source": "Company A", "target": "Bob", "actions": "meet, discuss"}, {"source": "Company A", "target": "Alice", "actions": "discuss"}, {"source": "Company A", "target": "Tom", "actions": "discuss"}, {"source": "Bob", "target": "Charlie", "actions": "attend"}, {"source": "Alice", "target": "Charlie", "actions": "have"}, {"source": "Alice", "target": "Eve", "actions": "collaborate"}, {"source": "Alice", "target": "Tom", "actions": "discuss"}, {"source": "Alice", "target": "Michael", "actions": "brainstorm"}, {"source": "Dave", "target": "Eve", "actions": "regard"}, {"source": "Tom", "target": "Jerry", "actions": "partner, join"}, {"source": "Tom", "target": "Spike", "actions": "join, discuss"}, {"source": "Tom", "target": "Tyke", "actions": "join"}, {"source": "Jerry", "target": "Spike", "actions": "join"}, {"source": "Jerry", "target": "Tyke", "actions": "join"}, {"source": "Jerry", "target": "Clara", "actions": "talk"}, {"source": "Jerry", "target": "Group Gamma", "actions": "talk"}, {"source": "Spike", "target": "Organization Z", "actions": "work"}, {"source": "Spike", "target": "Tyke", "actions": "work, join"}, {"source": "Organization Z", "target": "Tyke", "actions": "work"}, {"source": "John", "target": "Jane", "actions": "collaborate, attend"}, {"source": "John", "target": "Tim", "actions": "attend"}, {"source": "John", "target": "Anna", "actions": "explore"}, {"source": "Jane", "target": "Tim", "actions": "work, attend"}, {"source": "Anna", "target": "Ben", "actions": "collaborate, discuss"}, {"source": "Anna", "target": "Group Beta", "actions": "collaborate"}, {"source": "Anna", "target": "Clara", "actions": "attend"}, {"source": "Ben", "target": "Group Beta", "actions": "collaborate"}, {"source": "Ben", "target": "Clara", "actions": "work"}, {"source": "Ben", "target": "Group Gamma", "actions": "work"}, {"source": "Clara", "target": "Group Gamma", "actions": "work, talk"}, {"source": "Michael", "target": "Sarah", "actions": "partner, attend"}, {"source": "Michael", "target": "Division II", "actions": "partner"}, {"source": "Michael", "target": "Mike", "actions": "attend, discuss"}, {"source": "Sarah", "target": "Division II", "actions": "partner"}, {"source": "Sarah", "target": "Mike", "actions": "collaborate, attend"}, {"source": "Sarah", "target": "Division III", "actions": "collaborate"}, {"source": "Mike", "target": "Division III", "actions": "collaborate"}], "community_names": {"0": "Company A Bob", "2": "Tom Jerry Spike", "3": "John Jane Tim", "4": "Group Anna Ben", "1": "Division Michael Sarah"}}');
+            console.log('Show Actions: False');
+            const data = {"nodes": [{"id": "Company A", "size": 3, "count": 3, "community": 0}, {"id": "Bob", "size": 2, "count": 2, "community": 0}, {"id": "Alice", "size": 5, "count": 5, "community": 0}, {"id": "Charlie", "size": 2, "count": 2, "community": 0}, {"id": "Dave", "size": 1, "count": 1, "community": 0}, {"id": "Eve", "size": 2, "count": 2, "community": 0}, {"id": "Tom", "size": 7, "count": 7, "community": 2}, {"id": "Jerry", "size": 6, "count": 6, "community": 2}, {"id": "Spike", "size": 6, "count": 6, "community": 2}, {"id": "Organization Z", "size": 2, "count": 2, "community": 2}, {"id": "Tyke", "size": 5, "count": 5, "community": 2}, {"id": "John", "size": 4, "count": 4, "community": 3}, {"id": "Jane", "size": 4, "count": 4, "community": 3}, {"id": "Tim", "size": 3, "count": 3, "community": 3}, {"id": "Anna", "size": 5, "count": 5, "community": 4}, {"id": "Ben", "size": 5, "count": 5, "community": 4}, {"id": "Group Beta", "size": 2, "count": 2, "community": 4}, {"id": "Clara", "size": 5, "count": 5, "community": 4}, {"id": "Group Gamma", "size": 4, "count": 4, "community": 4}, {"id": "Michael", "size": 6, "count": 6, "community": 1}, {"id": "Sarah", "size": 6, "count": 6, "community": 1}, {"id": "Division II", "size": 2, "count": 2, "community": 1}, {"id": "Mike", "size": 5, "count": 5, "community": 1}, {"id": "Division III", "size": 2, "count": 2, "community": 1}], "links": [{"source": "Company A", "target": "Bob", "actions": "meet, discuss"}, {"source": "Company A", "target": "Alice", "actions": "discuss"}, {"source": "Company A", "target": "Tom", "actions": "discuss"}, {"source": "Bob", "target": "Charlie", "actions": "attend"}, {"source": "Alice", "target": "Charlie", "actions": "have"}, {"source": "Alice", "target": "Eve", "actions": "collaborate"}, {"source": "Alice", "target": "Tom", "actions": "discuss"}, {"source": "Alice", "target": "Michael", "actions": "brainstorm"}, {"source": "Dave", "target": "Eve", "actions": "regard"}, {"source": "Tom", "target": "Jerry", "actions": "partner, join"}, {"source": "Tom", "target": "Spike", "actions": "join, discuss"}, {"source": "Tom", "target": "Tyke", "actions": "join"}, {"source": "Jerry", "target": "Spike", "actions": "join"}, {"source": "Jerry", "target": "Tyke", "actions": "join"}, {"source": "Jerry", "target": "Clara", "actions": "talk"}, {"source": "Jerry", "target": "Group Gamma", "actions": "talk"}, {"source": "Spike", "target": "Organization Z", "actions": "work"}, {"source": "Spike", "target": "Tyke", "actions": "work, join"}, {"source": "Organization Z", "target": "Tyke", "actions": "work"}, {"source": "John", "target": "Jane", "actions": "collaborate, attend"}, {"source": "John", "target": "Tim", "actions": "attend"}, {"source": "John", "target": "Anna", "actions": "explore"}, {"source": "Jane", "target": "Tim", "actions": "work, attend"}, {"source": "Anna", "target": "Ben", "actions": "collaborate, discuss"}, {"source": "Anna", "target": "Group Beta", "actions": "collaborate"}, {"source": "Anna", "target": "Clara", "actions": "attend"}, {"source": "Ben", "target": "Group Beta", "actions": "collaborate"}, {"source": "Ben", "target": "Clara", "actions": "work"}, {"source": "Ben", "target": "Group Gamma", "actions": "work"}, {"source": "Clara", "target": "Group Gamma", "actions": "work, talk"}, {"source": "Michael", "target": "Sarah", "actions": "partner, attend"}, {"source": "Michael", "target": "Division II", "actions": "partner"}, {"source": "Michael", "target": "Mike", "actions": "attend, discuss"}, {"source": "Sarah", "target": "Division II", "actions": "partner"}, {"source": "Sarah", "target": "Mike", "actions": "collaborate, attend"}, {"source": "Sarah", "target": "Division III", "actions": "collaborate"}, {"source": "Mike", "target": "Division III", "actions": "collaborate"}], "community_names": {"0": "Company A Bob", "2": "Tom Jerry Spike", "3": "John Jane Tim", "4": "Group Anna Ben", "1": "Division Michael Sarah"}};
+const width = 960;
+const height = 600;
+const showActions = false;
+
+console.log("Data:", data);
+console.log("Width:", width);
+console.log("Height:", height);
+console.log("Show Actions:", showActions);
+
+// Create SVG
+const svg = d3.select("body")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", `0 0 $960 $600`)
+    .attr("preserveAspectRatio", "xMidYMid meet");
+
+console.log("SVG element created");
+
+// Add a marker for arrowheads
+svg.append("defs").append("marker")
+    .attr("id", "arrowhead")
+    .attr("viewBox", "-0 -5 10 10")
+    .attr("refX", 13)
+    .attr("refY", 0)
+    .attr("orient", "auto")
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("xoverflow", "visible")
+    .append("svg:path")
+    .attr("d", "M 0,-5 L 10 ,0 L 0,5")
+    .attr("fill", "#999")
+    .style("stroke", "none");
+
+console.log("Arrowhead marker added");
+
+// Color scale for communities
+const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+// Create community centers
+const communities = d3.groups(data.nodes, d => d.community)
+    .map(([, nodes]) => ({
+        id: nodes[0].community,
+        nodes: nodes,
+        x: d3.mean(nodes, n => n.x),
+        y: d3.mean(nodes, n => n.y)
+    }));
+
+// Add community labels
+const communityLabels = svg.append("g")
+    .attr("class", "community-labels")
+    .selectAll("text")
+    .data(communities)
+    .enter()
+    .append("text")
+    .attr("class", "community-label")
+    .attr("x", d => d.x)
+    .attr("y", d => d.y)
+    .attr("dy", -10)
+    .text(d => data.community_names[d.id])
+    .style("font-size", "12px") // Smaller font size
+    .style("font-weight", "normal")
+    .style("fill", "#999") // Less prominent color
+    .style("opacity", 0.7); // Less prominent opacity
+
+console.log("Community labels added");
+
+// Simulation
+const simulation = d3.forceSimulation(data.nodes)
+    .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
+    .force("charge", d3.forceManyBody().strength(-30))
+    .force("collision", d3.forceCollide().radius(d => d.size * 2 + 5))
+    .on("tick", ticked);
+
+console.log("Simulation created");
+
+// Links
+const link = svg.append("g")
+    .attr("class", "links")
+    .selectAll("line")
+    .data(data.links)
+    .enter()
+    .append("line")
+    .attr("stroke-width", 1) // Reduced stroke width
+    .attr("marker-end", "url(#arrowhead)")
+    .style("stroke", "#ccc") // Lighter stroke color
+    .style("stroke-opacity", 0.6); // Reduced stroke opacity
+
+console.log("Links added");
+
+// Nodes
+const node = svg.append("g")
+    .attr("class", "nodes")
+    .selectAll("circle")
+    .data(data.nodes)
+    .enter()
+    .append("circle")
+    .attr("r", d => d.size * 2)
+    .attr("fill", d => color(d.community))
+    .call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended));
+
+console.log("Nodes added");
+
+// Labels
+const label = svg.append("g")
+    .attr("class", "labels")
+    .selectAll("text")
+    .data(data.nodes)
+    .enter()
+    .append("text")
+    .attr("dy", 3)
+    .attr("dx", 12)
+    .text(d => d.id)
+    .style("pointer-events", "none");
+
+console.log("Labels added");
+
+// Tooltips
+const tooltip = d3.select("body")
+    .append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0)
+    .style("position", "absolute")
+    .style("background", "lightsteelblue")
+    .style("border", "0px")
+    .style("border-radius", "8px")
+    .style("padding", "8px")
+    .style("pointer-events", "none");
+
+console.log("Tooltip div created");
+
+node.on("mouseover", (event, d) => {
+        tooltip
+            .style("opacity", 1)
+            .html(`${d.id} (Count: ${d.count}, Community: ${d.community})`)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 10) + "px");
+    })
+    .on("mouseout", () => {
+        tooltip.style("opacity", 0);
+    });
+
+link.on("mouseover", (event, d) => {
+        tooltip
+            .style("opacity", 1)
+            .html(d.actions)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 10) + "px");
+    })
+    .on("mouseout", () => {
+        tooltip.style("opacity", 0);
+    });
+
+console.log("Tooltip events added");
+
+// Add text to links if showActions is true
+if (showActions) {
+    svg.append("g")
+        .attr("class", "link-labels")
+        .selectAll("text")
+        .data(data.links)
+        .enter()
+        .append("text")
+        .attr("class", "action-label")
+        .attr("text-anchor", "middle")
+        .text(d => d.actions);
+    console.log("Action labels added");
+}
+
+// Simulation tick
+function ticked() {
+    link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+    node
+        .attr("cx", d => d.x = Math.max(10, Math.min(width - 10, d.x)))
+        .attr("cy", d => d.y = Math.max(10, Math.min(height - 10, d.y)));
+
+    label
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+
+    updateCommunityLabels();
+}
+
+console.log("Simulation tick added");
+
+// Drag functions
+function dragstarted(event, d) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+}
+
+function dragged(event, d) {
+    d.fx = event.x;
+    d.fy = event.y;
+}
+
+function dragended(event, d) {
+    if (!event.active) simulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+}
+
+console.log("Drag functions added");
+
+// Prevent label overlap
+const labelSimulation = d3.forceSimulation(data.nodes)
+    .force("collide", d3.forceCollide().radius(d => d.size * 2 + 15))
+    .on("tick", tickedLabels);
+
+function tickedLabels() {
+    label
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+}
+
+console.log("Label collision simulation added");
+
+function updateCommunityLabels() {
+    communities.forEach(c => {
+        c.x = d3.mean(c.nodes, n => n.x);
+        c.y = d3.mean(c.nodes, n => n.y);
+    });
+
+    communityLabels
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+}
+
+console.log("Update community labels added");
+
+        </script>
+    </div>
+</body>
+</html>
+    
