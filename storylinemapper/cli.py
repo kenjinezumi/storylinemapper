@@ -1,58 +1,27 @@
 # storylinemapper/cli.py
 
-import argparse
-import sys
-from storylinemapper import (
-    generate_network, generate_network_iframe,
-    extract_events, generate_timeline_iframe
-)
-import spacy
+import click
+from storylinemapper.network import generate_network
+from storylinemapper.html_generator import generate_html
 
-nlp = spacy.load("en_core_web_sm")
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="StorylineMapper CLI")
-    subparsers = parser.add_subparsers(dest="command")
-
-    # Subparser for character network
-    network_parser = subparsers.add_parser("network", help="Generate character network")
-    network_parser.add_argument("text", type=str, help="Input text")
-    network_parser.add_argument("--output", type=str, help="Output file for iframe (optional)")
-    network_parser.add_argument("--show-actions", action="store_true", help="Show action verbs on edges")
-    network_parser.add_argument("--style", type=str, default="style1", help="CSS style to use")
-    network_parser.add_argument("--script", type=str, default="script1", help="D3 script to use")
-    network_parser.add_argument("--width", type=str, default="960px", help="Width of the iframe")
-    network_parser.add_argument("--height", type=str, default="600px", help="Height of the iframe")
-
-    # Subparser for event timeline
-    timeline_parser = subparsers.add_parser("timeline", help="Generate event timeline")
-    timeline_parser.add_argument("text", type=str, help="Input text")
-    timeline_parser.add_argument("--output", type=str, help="Output file for iframe (optional)")
-    timeline_parser.add_argument("--width", type=str, default="960px", help="Width of the iframe")
-    timeline_parser.add_argument("--height", type=str, default="600px", help="Height of the iframe")
-
-    return parser.parse_args()
-
+@click.group()
 def main():
-    args = parse_args()
+    pass
 
-    if args.command == "network":
-        text = args.text
-        G = generate_network(text)
-        if args.output:
-            iframe_html = generate_network_iframe(G, style=args.style, script=args.script, show_actions=args.show_actions, width=args.width, height=args.height)
-            with open(args.output, 'w') as f:
-                f.write(iframe_html)
-            print(f"Network iframe saved to {args.output}")
+@main.command()
+@click.argument('text')
+@click.option('--output', default='network.html', help='Output HTML file')
+@click.option('--show-actions', is_flag=True, help='Show actions on edges')
+@click.option('--style', default='style1', help='CSS style file')
+@click.option('--script', default='script1', help='JavaScript file for visualization')
+@click.option('--width', default='960px', help='Width of the iframe')
+@click.option('--height', default='600px', help='Height of the iframe')
+def network(text, output, show_actions, style, script, width, height):
+    G = generate_network(text)
+    html_content = generate_html(G, style=style, script=script, show_actions=show_actions, width=width, height=height)
+    with open(output, 'w') as f:
+        f.write(html_content)
+    click.echo(f'Network iframe saved to {output}')
 
-    elif args.command == "timeline":
-        text = args.text
-        events = extract_events(text)
-        if args.output:
-            iframe_html = generate_timeline_iframe(events, width=args.width, height=args.height)
-            with open(args.output, 'w') as f:
-                f.write(iframe_html)
-            print(f"Timeline iframe saved to {args.output}")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
