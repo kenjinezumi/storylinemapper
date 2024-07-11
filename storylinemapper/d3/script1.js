@@ -1,5 +1,3 @@
-// script1.js
-
 const data = {json_data};
 const width = {width};
 const height = {height};
@@ -33,7 +31,7 @@ svg.append("defs").append("marker")
     .append("svg:path")
     .attr("d", "M 0,-5 L 10 ,0 L 0,5")
     .attr("fill", "#999")
-    .style("stroke","none");
+    .style("stroke", "none");
 
 console.log("Arrowhead marker added");
 
@@ -44,8 +42,9 @@ const color = d3.scaleOrdinal(d3.schemeCategory10);
 const communities = d3.groups(data.nodes, d => d.community)
     .map(([, nodes]) => ({
         id: nodes[0].community,
-        x: Math.random() * width,
-        y: Math.random() * height
+        nodes: nodes,
+        x: d3.mean(nodes, n => n.x),
+        y: d3.mean(nodes, n => n.y)
     }));
 
 // Add community labels
@@ -60,9 +59,10 @@ const communityLabels = svg.append("g")
     .attr("y", d => d.y)
     .attr("dy", -10)
     .text(d => data.community_names[d.id])
-    .style("font-size", "16px")
-    .style("font-weight", "bold")
-    .style("fill", "#555");
+    .style("font-size", "12px") // Smaller font size
+    .style("font-weight", "normal")
+    .style("fill", "#999") // Less prominent color
+    .style("opacity", 0.7); // Less prominent opacity
 
 console.log("Community labels added");
 
@@ -71,8 +71,6 @@ const simulation = d3.forceSimulation(data.nodes)
     .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
     .force("charge", d3.forceManyBody().strength(-30))
     .force("collision", d3.forceCollide().radius(d => d.size * 2 + 5))
-    .force("x", d3.forceX(d => communities.find(c => c.id === d.community).x).strength(0.1))
-    .force("y", d3.forceY(d => communities.find(c => c.id === d.community).y).strength(0.1))
     .on("tick", ticked);
 
 console.log("Simulation created");
@@ -189,15 +187,7 @@ function ticked() {
         .attr("x", d => d.x)
         .attr("y", d => d.y);
 
-    communityLabels
-        .attr("x", d => d.x)
-        .attr("y", d => d.y);
-
-    if (showActions) {
-        svg.selectAll(".action-label")
-            .attr("x", d => (d.source.x + d.target.x) / 2)
-            .attr("y", d => (d.source.y + d.target.y) / 2);
-    }
+    updateCommunityLabels();
 }
 
 console.log("Simulation tick added");
@@ -234,3 +224,16 @@ function tickedLabels() {
 }
 
 console.log("Label collision simulation added");
+
+function updateCommunityLabels() {
+    communities.forEach(c => {
+        c.x = d3.mean(c.nodes, n => n.x);
+        c.y = d3.mean(c.nodes, n => n.y);
+    });
+
+    communityLabels
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+}
+
+console.log("Update community labels added");
