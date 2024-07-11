@@ -1,7 +1,7 @@
 import click
 from storylinemapper.network import generate_network
 from storylinemapper.html_generator import generate_html
-from storylinemapper.community import build_network_from_text, run_community_detection, name_communities
+from storylinemapper.community_analysis.community import build_network_from_text, run_community_detection, name_communities
 
 @click.group()
 def main():
