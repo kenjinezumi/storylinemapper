@@ -130,40 +130,61 @@ const tooltip = d3.select("body")
     .style("border", "0px")
     .style("border-radius", "8px")
     .style("padding", "8px")
-    .style("pointer-events", "none");
+    .style("pointer-events", "auto");
 
 console.log("Tooltip div created");
 
+// Info tooltip
+const infoTooltip = d3.select("body")
+    .append("div")
+    .attr("class", "info-tooltip")
+    .style("opacity", 0)
+    .style("position", "absolute")
+    .style("background", "lightyellow")
+    .style("border", "1px solid #ccc")
+    .style("border-radius", "8px")
+    .style("padding", "8px")
+    .style("pointer-events", "none")
+    .style("font-size", "10px")
+    .style("width", "200px");
+
+function showInfo(event, text) {
+    infoTooltip
+        .style("opacity", 1)
+        .html(text)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 10) + "px");
+}
+
+function hideInfo() {
+    infoTooltip.style("opacity", 0);
+}
+
 node.on("mouseover", (event, d) => {
-        tooltip
-            .style("opacity", 1)
-            .html(`
-                <strong>${d.id}</strong><br>
-                Count: ${d.count}<br>
-                Community: ${d.community}<br>
-                Degree Centrality: ${d.degree_centrality.toFixed(4)}<span class="info-icon" id="degree-info" title="Degree Centrality: measures the number of direct connections a node has.">?</span><br>
-                Betweenness Centrality: ${d.betweenness_centrality.toFixed(4)}<span class="info-icon" id="betweenness-info" title="Betweenness Centrality: indicates how often a node appears on shortest paths between other nodes.">?</span><br>
-                Closeness Centrality: ${d.closeness_centrality.toFixed(4)}<span class="info-icon" id="closeness-info" title="Closeness Centrality: reflects how close a node is to all other nodes in the network.">?</span><br>
-                Eigenvector Centrality: ${d.eigenvector_centrality.toFixed(4)}<span class="info-icon" id="eigenvector-info" title="Eigenvector Centrality: measures a node's influence based on the influence of its neighbors.">?</span><br>
-                Effective Size: ${d.effective_size.toFixed(4)}<span class="info-icon" id="size-info" title="Effective Size: represents the number of non-redundant contacts a node has.">?</span>
-            `)
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY - 10) + "px");
-    })
-    .on("mouseout", () => {
-        tooltip.style("opacity", 0);
-    });
+    if (!d3.select(".tooltip").classed("sticky")) {
+        showTooltip(event, d);
+    }
+})
+.on("mouseout", () => {
+    if (!d3.select(".tooltip").classed("sticky")) {
+        hideTooltip();
+    }
+});
 
 link.on("mouseover", (event, d) => {
+    if (!d3.select(".tooltip").classed("sticky")) {
         tooltip
             .style("opacity", 1)
             .html(d.actions)
             .style("left", (event.pageX + 10) + "px")
             .style("top", (event.pageY - 10) + "px");
-    })
-    .on("mouseout", () => {
+    }
+})
+.on("mouseout", () => {
+    if (!d3.select(".tooltip").classed("sticky")) {
         tooltip.style("opacity", 0);
-    });
+    }
+});
 
 console.log("Tooltip events added");
 
@@ -371,67 +392,56 @@ document.getElementById("highlight-path-btn").addEventListener("click", highligh
 
 console.log("Shortest path functionality added");
 
-// Info tooltip
-const infoTooltip = d3.select("body")
-    .append("div")
-    .attr("class", "info-tooltip")
-    .style("opacity", 0)
-    .style("position", "absolute")
-    .style("background", "lightyellow")
-    .style("border", "1px solid #ccc")
-    .style("border-radius", "8px")
-    .style("padding", "8px")
-    .style("pointer-events", "none")
-    .style("font-size", "10px")
-    .style("width", "200px");
-
-function showInfo(event, text) {
-    infoTooltip
-        .style("opacity", 1)
-        .html(text)
-        .style("left", (event.pageX + 10) + "px")
-        .style("top", (event.pageY - 10) + "px");
-}
-
-function hideInfo() {
-    infoTooltip.style("opacity", 0);
-}
-
 // Highlight node function
 function highlightNode(event, d) {
     const selectedCommunity = d.community;
     node.style("opacity", o => o.community === selectedCommunity ? 1 : 0.1);
     link.style("opacity", l => l.source.community === selectedCommunity && l.target.community === selectedCommunity ? 1 : 0.1);
     label.style("opacity", o => o.community === selectedCommunity ? 1 : 0.1);
-    tooltip.style("opacity", 1)
+    showTooltip(event, d);
+    d3.select(".tooltip").classed("sticky", true);
+}
+
+document.addEventListener("click", function(event) {
+    if (!event.target.closest(".nodes circle") && !event.target.closest(".info-icon")) {
+        node.style("opacity", 1);
+        link.style("opacity", 1);
+        label.style("opacity", 1);
+        tooltip.style("opacity", 0);
+        d3.select(".tooltip").classed("sticky", false);
+    }
+});
+
+console.log("Highlight node functionality added");
+
+function showTooltip(event, d) {
+    tooltip
+        .style("opacity", 1)
         .html(`
             <strong>${d.id}</strong><br>
             Count: ${d.count}<br>
             Community: ${d.community}<br>
-            Degree Centrality: ${d.degree_centrality.toFixed(4)}<span class="info-icon" id="degree-info" title="Degree Centrality: measures the number of direct connections a node has.">?</span><br>
-            Betweenness Centrality: ${d.betweenness_centrality.toFixed(4)}<span class="info-icon" id="betweenness-info" title="Betweenness Centrality: indicates how often a node appears on shortest paths between other nodes.">?</span><br>
-            Closeness Centrality: ${d.closeness_centrality.toFixed(4)}<span class="info-icon" id="closeness-info" title="Closeness Centrality: reflects how close a node is to all other nodes in the network.">?</span><br>
-            Eigenvector Centrality: ${d.eigenvector_centrality.toFixed(4)}<span class="info-icon" id="eigenvector-info" title="Eigenvector Centrality: measures a node's influence based on the influence of its neighbors.">?</span><br>
-            Effective Size: ${d.effective_size.toFixed(4)}<span class="info-icon" id="size-info" title="Effective Size: represents the number of non-redundant contacts a node has.">?</span>
+            Degree Centrality: ${d.degree_centrality.toFixed(4)}<span class="info-icon" id="degree-info" title="Degree Centrality: measures the number of direct connections a node has.">&#x2753;</span><br>
+            Betweenness Centrality: ${d.betweenness_centrality.toFixed(4)}<span class="info-icon" id="betweenness-info" title="Betweenness Centrality: indicates how often a node appears on shortest paths between other nodes.">&#x2753;</span><br>
+            Closeness Centrality: ${d.closeness_centrality.toFixed(4)}<span class="info-icon" id="closeness-info" title="Closeness Centrality: reflects how close a node is to all other nodes in the network.">&#x2753;</span><br>
+            Eigenvector Centrality: ${d.eigenvector_centrality.toFixed(4)}<span class="info-icon" id="eigenvector-info" title="Eigenvector Centrality: measures a node's influence based on the influence of its neighbors.">&#x2753;</span><br>
+            Effective Size: ${d.effective_size.toFixed(4)}<span class="info-icon" id="size-info" title="Effective Size: represents the number of non-redundant contacts a node has.">&#x2753;</span>
         `)
         .style("left", (event.pageX + 10) + "px")
         .style("top", (event.pageY - 10) + "px");
 
     // Add event listeners for info icons
-    d3.select("#degree-info").on("mouseover", () => showInfo(event, "Degree Centrality: measures the number of direct connections a node has."));
-    d3.select("#betweenness-info").on("mouseover", () => showInfo(event, "Betweenness Centrality: indicates how often a node appears on shortest paths between other nodes."));
-    d3.select("#closeness-info").on("mouseover", () => showInfo(event, "Closeness Centrality: reflects how close a node is to all other nodes in the network."));
-    d3.select("#eigenvector-info").on("mouseover", () => showInfo(event, "Eigenvector Centrality: measures a node's influence based on the influence of its neighbors."));
-    d3.select("#size-info").on("mouseover", () => showInfo(event, "Effective Size: represents the number of non-redundant contacts a node has."));
+    d3.select("#degree-info").on("mouseover", (e) => showInfo(e, "Degree Centrality: measures the number of direct connections a node has."));
+    d3.select("#betweenness-info").on("mouseover", (e) => showInfo(e, "Betweenness Centrality: indicates how often a node appears on shortest paths between other nodes."));
+    d3.select("#closeness-info").on("mouseover", (e) => showInfo(e, "Closeness Centrality: reflects how close a node is to all other nodes in the network."));
+    d3.select("#eigenvector-info").on("mouseover", (e) => showInfo(e, "Eigenvector Centrality: measures a node's influence based on the influence of its neighbors."));
+    d3.select("#size-info").on("mouseover", (e) => showInfo(e, "Effective Size: represents the number of non-redundant contacts a node has."));
+
+    d3.selectAll(".info-icon").on("mouseout", hideInfo);
 }
 
-document.addEventListener("click", function(event) {
-    if (!event.target.closest(".nodes circle")) {
-        node.style("opacity", 1);
-        link.style("opacity", 1);
-        label.style("opacity", 1);
+function hideTooltip() {
+    if (!d3.select(".tooltip").classed("sticky")) {
         tooltip.style("opacity", 0);
     }
-});
-
-console.log("Highlight node functionality added");
+}
