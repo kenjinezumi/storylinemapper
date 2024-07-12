@@ -445,3 +445,48 @@ function hideTooltip() {
         tooltip.style("opacity", 0);
     }
 }
+
+// Highlight k-core function
+function highlightKCore() {
+    const kValue = +document.getElementById("k-core-value").value;
+
+    if (isNaN(kValue) || kValue < 1) {
+        alert("Please enter a valid k value.");
+        return;
+    }
+
+    const kCore = findKCore(data.nodes, data.links, kValue);
+
+    node.style("opacity", d => kCore.has(d.id) ? 1 : 0.1);
+    link.style("opacity", l => kCore.has(l.source.id) && kCore.has(l.target.id) ? 1 : 0.1);
+    label.style("opacity", d => kCore.has(d.id) ? 1 : 0.1);
+}
+
+function findKCore(nodes, links, k) {
+    const graph = new Map();
+    nodes.forEach(node => graph.set(node.id, []));
+    links.forEach(link => {
+        graph.get(link.source.id).push(link.target.id);
+        graph.get(link.target.id).push(link.source.id);
+    });
+
+    let changed;
+    do {
+        changed = false;
+        nodes.forEach(node => {
+            if (graph.get(node.id).length < k && graph.has(node.id)) {
+                graph.get(node.id).forEach(neighbor => {
+                    graph.get(neighbor).splice(graph.get(neighbor).indexOf(node.id), 1);
+                });
+                graph.delete(node.id);
+                changed = true;
+            }
+        });
+    } while (changed);
+
+    return new Set(graph.keys());
+}
+
+document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCore);
+
+console.log("k-core highlighting functionality added");
