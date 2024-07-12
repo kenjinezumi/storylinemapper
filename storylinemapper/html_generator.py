@@ -34,7 +34,13 @@ def load_js(script: str, json_data: str, show_actions: bool, width: int, height:
     return js_code
 
 def generate_html(G, partition: dict, community_names: dict, title: str = "Entity Relation Network", style: str = "style1", script: str = "script1", show_actions: bool = False, width: str = "960px", height: str = "600px", design_options: bool = False) -> str:
-    nodes = [{"id": node, "size": data["size"], "count": data["size"], "community": partition[node]} for node, data in G.nodes(data=True)]
+    metrics = calculate_all_metrics(G)
+    nodes = [{"id": node, "size": data["size"], "count": data["size"], "community": partition[node],
+              "degree_centrality": metrics["degree_centrality"].get(node, 0),
+              "betweenness_centrality": metrics["betweenness_centrality"].get(node, 0),
+              "closeness_centrality": metrics["closeness_centrality"].get(node, 0),
+              "eigenvector_centrality": metrics["eigenvector_centrality"].get(node, 0),
+              "effective_size": metrics["effective_size"].get(node, 0)} for node, data in G.nodes(data=True)]
     links = [{"source": u, "target": v, "actions": data["actions"]} for u, v, data in G.edges(data=True)]
     
     data = {
@@ -47,7 +53,6 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     css_content = load_css(style)
 
     if design_options:
-        metrics = calculate_all_metrics(G)
         js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options, metrics)
         community_options = "\n".join([f'<option value="{community}">{name}</option>' for community, name in community_names.items()])
         additional_html = f"""
@@ -70,6 +75,11 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
             </select>
             <input type="text" id="exclude-nodes" placeholder="Exclude Nodes (comma separated)">
             <input type="text" id="node-comments" placeholder="Add Comment to Node">
+        </div>
+        <div>
+            <input type="text" id="source-node" placeholder="Source Node">
+            <input type="text" id="target-node" placeholder="Target Node">
+            <button id="highlight-path-btn">Highlight Shortest Path</button>
         </div>
         <div id="metrics"></div>
         """
