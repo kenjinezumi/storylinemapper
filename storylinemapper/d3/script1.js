@@ -2,14 +2,14 @@ const data = {json_data};
 
 const showActions = {show_actions};
 const width = window.innerWidth;
-const height = window.innerHeight;
+const height = window.innerHeight - 50; // Adjust height to accommodate the top bar
 console.log("Data:", data);
 console.log("Width:", width);
 console.log("Height:", height);
 console.log("Show Actions:", showActions);
 
 // Create SVG
-const svg = d3.select("body")
+const svg = d3.select(".main-content")
     .append("svg")
     .attr("width", "100%")
     .attr("height", "100%")
@@ -283,14 +283,12 @@ function updateDesign() {
     const nodeColor = document.getElementById("node-color-picker").value;
     const nodeSize = +document.getElementById("node-size-slider").value;
     const linkWidth = +document.getElementById("link-width-slider").value;
-    const forceType = document.getElementById("force-type-selector").value;
 
     node.attr("fill", nodeColor)
         .attr("r", nodeSize);
 
     link.attr("stroke-width", linkWidth);
 
-    simulation.force("charge").strength(forceType === "strong" ? -50 : forceType === "weak" ? -10 : -30);
     simulation.alpha(1).restart();
 }
 
@@ -325,12 +323,25 @@ function exportNetwork(format) {
 }
 
 // Add event listeners for filters and design options
-document.getElementById("filter-btn").addEventListener("click", filterNodes);
-document.getElementById("update-design-btn").addEventListener("click", updateDesign);
-document.getElementById("export-svg-btn").addEventListener("click", function() { exportNetwork('svg'); });
-document.getElementById("export-png-btn").addEventListener("click", function() { exportNetwork('png'); });
+document.getElementById("design-btn").addEventListener("click", function() {
+    togglePanel("design-options");
+});
+document.getElementById("analysis-btn").addEventListener("click", function() {
+    togglePanel("analysis-options");
+});
+document.getElementById("export-btn").addEventListener("click", function() {
+    togglePanel("export-options");
+});
+document.getElementById("highlight-path-btn").addEventListener("click", highlightShortestPath);
+document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCores);
+document.getElementById("show-cliques-btn").addEventListener("click", showCliques);
 
 console.log("Added filters and design options");
+
+function togglePanel(panelId) {
+    const panel = document.getElementById(panelId);
+    panel.style.display = panel.style.display === "none" ? "block" : "none";
+}
 
 // Add logic for highlighting shortest path
 function highlightShortestPath() {
@@ -388,8 +399,6 @@ function findShortestPath(source, target) {
     return null;
 }
 
-document.getElementById("highlight-path-btn").addEventListener("click", highlightShortestPath);
-
 console.log("Shortest path functionality added");
 
 // Highlight node function
@@ -444,4 +453,31 @@ function hideTooltip() {
     if (!d3.select(".tooltip").classed("sticky")) {
         tooltip.style("opacity", 0);
     }
+}
+
+// Highlight K-cores function
+function highlightKCores() {
+    const kCores = d3.group(data.nodes, d => d.k_core);
+    kCores.forEach((nodes, k) => {
+        if (k > 1) {
+            nodes.forEach(node => {
+                d3.select(`circle[data-id='${node.id}']`)
+                    .attr("fill", d3.rgb(color(node.community)).darker(k - 1));
+            });
+        }
+    });
+    console.log("K-cores highlighted");
+}
+
+// Show Cliques function
+function showCliques() {
+    const cliques = data.cliques;
+    cliques.forEach(clique => {
+        clique.forEach(nodeId => {
+            d3.select(`circle[data-id='${nodeId}']`)
+                .attr("stroke", "red")
+                .attr("stroke-width", 2);
+        });
+    });
+    console.log("Cliques shown");
 }
