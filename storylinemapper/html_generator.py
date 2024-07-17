@@ -75,6 +75,7 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
             <input type="text" id="node-comments" placeholder="Add Comment to Node">
             <input type="number" id="k-core-value" min="1" placeholder="Enter k value">
             <button id="highlight-k-core-btn">Highlight k-core</button>
+            <button id="show-cliques-btn">Show Cliques</button>
         </div>
         <div>
             <input type="text" id="source-node" placeholder="Source Node">

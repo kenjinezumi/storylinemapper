@@ -490,3 +490,66 @@ function findKCore(nodes, links, k) {
 document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCore);
 
 console.log("k-core highlighting functionality added");
+
+// Highlight cliques function
+function highlightCliques() {
+    const cliques = findCliques(data.nodes, data.links);
+
+    node.style("opacity", d => {
+        for (const clique of cliques) {
+            if (clique.has(d.id)) return 1;
+        }
+        return 0.1;
+    });
+
+    link.style("opacity", l => {
+        for (const clique of cliques) {
+            if (clique.has(l.source.id) && clique.has(l.target.id)) return 1;
+        }
+        return 0.1;
+    });
+
+    label.style("opacity", d => {
+        for (const clique of cliques) {
+            if (clique.has(d.id)) return 1;
+        }
+        return 0.1;
+    });
+}
+
+function findCliques(nodes, links) {
+    const graph = new Map();
+    nodes.forEach(node => graph.set(node.id, []));
+    links.forEach(link => {
+        graph.get(link.source.id).push(link.target.id);
+        graph.get(link.target.id).push(link.source.id);
+    });
+
+    const cliques = [];
+
+    function bronKerbosch(R, P, X) {
+        if (P.length === 0 && X.length === 0) {
+            cliques.push(new Set(R));
+            return;
+        }
+
+        for (let i = 0; i < P.length; i++) {
+            const v = P[i];
+            const newR = [...R, v];
+            const newP = P.filter(n => graph.get(v).includes(n));
+            const newX = X.filter(n => graph.get(v).includes(n));
+
+            bronKerbosch(newR, newP, newX);
+
+            P.splice(i, 1);
+            X.push(v);
+        }
+    }
+
+    bronKerbosch([], Array.from(graph.keys()), []);
+    return cliques;
+}
+
+document.getElementById("show-cliques-btn").addEventListener("click", highlightCliques);
+
+console.log("Clique highlighting functionality added");
