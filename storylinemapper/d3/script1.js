@@ -2,14 +2,14 @@ const data = {json_data};
 
 const showActions = {show_actions};
 const width = window.innerWidth;
-const height = window.innerHeight;
+const height = window.innerHeight - 50; // Adjust height to accommodate the top bar
 console.log("Data:", data);
 console.log("Width:", width);
 console.log("Height:", height);
 console.log("Show Actions:", showActions);
 
 // Create SVG
-const svg = d3.select("body")
+const svg = d3.select(".main-content")
     .append("svg")
     .attr("width", "100%")
     .attr("height", "100%")
@@ -101,7 +101,8 @@ const node = svg.append("g")
     .call(d3.drag()
         .on("start", dragstarted)
         .on("drag", dragged)
-        .on("end", dragended));
+        .on("end", dragended))
+    .on("click", highlightNode);
 
 console.log("Nodes added");
 
@@ -129,31 +130,61 @@ const tooltip = d3.select("body")
     .style("border", "0px")
     .style("border-radius", "8px")
     .style("padding", "8px")
-    .style("pointer-events", "none");
+    .style("pointer-events", "auto");
 
 console.log("Tooltip div created");
 
+// Info tooltip
+const infoTooltip = d3.select("body")
+    .append("div")
+    .attr("class", "info-tooltip")
+    .style("opacity", 0)
+    .style("position", "absolute")
+    .style("background", "lightyellow")
+    .style("border", "1px solid #ccc")
+    .style("border-radius", "8px")
+    .style("padding", "8px")
+    .style("pointer-events", "none")
+    .style("font-size", "10px")
+    .style("width", "200px");
+
+function showInfo(event, text) {
+    infoTooltip
+        .style("opacity", 1)
+        .html(text)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 10) + "px");
+}
+
+function hideInfo() {
+    infoTooltip.style("opacity", 0);
+}
+
 node.on("mouseover", (event, d) => {
-        tooltip
-            .style("opacity", 1)
-            .html(`${d.id} (Count: ${d.count}, Community: ${d.community})`)
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY - 10) + "px");
-    })
-    .on("mouseout", () => {
-        tooltip.style("opacity", 0);
-    });
+    if (!d3.select(".tooltip").classed("sticky")) {
+        showTooltip(event, d);
+    }
+})
+.on("mouseout", () => {
+    if (!d3.select(".tooltip").classed("sticky")) {
+        hideTooltip();
+    }
+});
 
 link.on("mouseover", (event, d) => {
+    if (!d3.select(".tooltip").classed("sticky")) {
         tooltip
             .style("opacity", 1)
             .html(d.actions)
             .style("left", (event.pageX + 10) + "px")
             .style("top", (event.pageY - 10) + "px");
-    })
-    .on("mouseout", () => {
+    }
+})
+.on("mouseout", () => {
+    if (!d3.select(".tooltip").classed("sticky")) {
         tooltip.style("opacity", 0);
-    });
+    }
+});
 
 console.log("Tooltip events added");
 
@@ -252,14 +283,12 @@ function updateDesign() {
     const nodeColor = document.getElementById("node-color-picker").value;
     const nodeSize = +document.getElementById("node-size-slider").value;
     const linkWidth = +document.getElementById("link-width-slider").value;
-    const forceType = document.getElementById("force-type-selector").value;
 
     node.attr("fill", nodeColor)
         .attr("r", nodeSize);
 
     link.attr("stroke-width", linkWidth);
 
-    simulation.force("charge").strength(forceType === "strong" ? -50 : forceType === "weak" ? -10 : -30);
     simulation.alpha(1).restart();
 }
 
@@ -294,9 +323,161 @@ function exportNetwork(format) {
 }
 
 // Add event listeners for filters and design options
-document.getElementById("filter-btn").addEventListener("click", filterNodes);
-document.getElementById("update-design-btn").addEventListener("click", updateDesign);
-document.getElementById("export-svg-btn").addEventListener("click", function() { exportNetwork('svg'); });
-document.getElementById("export-png-btn").addEventListener("click", function() { exportNetwork('png'); });
+document.getElementById("design-btn").addEventListener("click", function() {
+    togglePanel("design-options");
+});
+document.getElementById("analysis-btn").addEventListener("click", function() {
+    togglePanel("analysis-options");
+});
+document.getElementById("export-btn").addEventListener("click", function() {
+    togglePanel("export-options");
+});
+document.getElementById("highlight-path-btn").addEventListener("click", highlightShortestPath);
+document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCores);
+document.getElementById("show-cliques-btn").addEventListener("click", showCliques);
 
 console.log("Added filters and design options");
+
+function togglePanel(panelId) {
+    const panel = document.getElementById(panelId);
+    panel.style.display = panel.style.display === "none" ? "block" : "none";
+}
+
+// Add logic for highlighting shortest path
+function highlightShortestPath() {
+    const sourceNode = document.getElementById("source-node").value;
+    const targetNode = document.getElementById("target-node").value;
+
+    if (!sourceNode || !targetNode) {
+        alert("Please specify both source and target nodes.");
+        return;
+    }
+
+    const shortestPath = findShortestPath(sourceNode, targetNode);
+    if (!shortestPath) {
+        alert(`No path found between ${sourceNode} and ${targetNode}.`);
+        return;
+    }
+
+    link.style("stroke", l => shortestPath.includes(l.source.id) && shortestPath.includes(l.target.id) ? "red" : "#ccc")
+        .style("stroke-width", l => shortestPath.includes(l.source.id) && shortestPath.includes(l.target.id) ? 2 : 1);
+}
+
+function findShortestPath(source, target) {
+    const graph = new Map();
+    data.nodes.forEach(node => graph.set(node.id, []));
+    data.links.forEach(link => {
+        graph.get(link.source).push(link.target);
+        graph.get(link.target).push(link.source);
+    });
+
+    const queue = [source];
+    const visited = new Set();
+    const predecessor = {};
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (current === target) {
+            const path = [];
+            let step = target;
+            while (step !== source) {
+                path.unshift(step);
+                step = predecessor[step];
+            }
+            path.unshift(source);
+            return path;
+        }
+        graph.get(current).forEach(neighbor => {
+            if (!visited.has(neighbor)) {
+                visited.add(neighbor);
+                predecessor[neighbor] = current;
+                queue.push(neighbor);
+            }
+        });
+    }
+
+    return null;
+}
+
+console.log("Shortest path functionality added");
+
+// Highlight node function
+function highlightNode(event, d) {
+    const selectedCommunity = d.community;
+    node.style("opacity", o => o.community === selectedCommunity ? 1 : 0.1);
+    link.style("opacity", l => l.source.community === selectedCommunity && l.target.community === selectedCommunity ? 1 : 0.1);
+    label.style("opacity", o => o.community === selectedCommunity ? 1 : 0.1);
+    showTooltip(event, d);
+    d3.select(".tooltip").classed("sticky", true);
+}
+
+document.addEventListener("click", function(event) {
+    if (!event.target.closest(".nodes circle") && !event.target.closest(".info-icon")) {
+        node.style("opacity", 1);
+        link.style("opacity", 1);
+        label.style("opacity", 1);
+        tooltip.style("opacity", 0);
+        d3.select(".tooltip").classed("sticky", false);
+    }
+});
+
+console.log("Highlight node functionality added");
+
+function showTooltip(event, d) {
+    tooltip
+        .style("opacity", 1)
+        .html(`
+            <strong>${d.id}</strong><br>
+            Count: ${d.count}<br>
+            Community: ${d.community}<br>
+            Degree Centrality: ${d.degree_centrality.toFixed(4)}<span class="info-icon" id="degree-info" title="Degree Centrality: measures the number of direct connections a node has.">&#x2753;</span><br>
+            Betweenness Centrality: ${d.betweenness_centrality.toFixed(4)}<span class="info-icon" id="betweenness-info" title="Betweenness Centrality: indicates how often a node appears on shortest paths between other nodes.">&#x2753;</span><br>
+            Closeness Centrality: ${d.closeness_centrality.toFixed(4)}<span class="info-icon" id="closeness-info" title="Closeness Centrality: reflects how close a node is to all other nodes in the network.">&#x2753;</span><br>
+            Eigenvector Centrality: ${d.eigenvector_centrality.toFixed(4)}<span class="info-icon" id="eigenvector-info" title="Eigenvector Centrality: measures a node's influence based on the influence of its neighbors.">&#x2753;</span><br>
+            Effective Size: ${d.effective_size.toFixed(4)}<span class="info-icon" id="size-info" title="Effective Size: represents the number of non-redundant contacts a node has.">&#x2753;</span>
+        `)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 10) + "px");
+
+    // Add event listeners for info icons
+    d3.select("#degree-info").on("mouseover", (e) => showInfo(e, "Degree Centrality: measures the number of direct connections a node has."));
+    d3.select("#betweenness-info").on("mouseover", (e) => showInfo(e, "Betweenness Centrality: indicates how often a node appears on shortest paths between other nodes."));
+    d3.select("#closeness-info").on("mouseover", (e) => showInfo(e, "Closeness Centrality: reflects how close a node is to all other nodes in the network."));
+    d3.select("#eigenvector-info").on("mouseover", (e) => showInfo(e, "Eigenvector Centrality: measures a node's influence based on the influence of its neighbors."));
+    d3.select("#size-info").on("mouseover", (e) => showInfo(e, "Effective Size: represents the number of non-redundant contacts a node has."));
+
+    d3.selectAll(".info-icon").on("mouseout", hideInfo);
+}
+
+function hideTooltip() {
+    if (!d3.select(".tooltip").classed("sticky")) {
+        tooltip.style("opacity", 0);
+    }
+}
+
+// Highlight K-cores function
+function highlightKCores() {
+    const kCores = d3.group(data.nodes, d => d.k_core);
+    kCores.forEach((nodes, k) => {
+        if (k > 1) {
+            nodes.forEach(node => {
+                d3.select(`circle[data-id='${node.id}']`)
+                    .attr("fill", d3.rgb(color(node.community)).darker(k - 1));
+            });
+        }
+    });
+    console.log("K-cores highlighted");
+}
+
+// Show Cliques function
+function showCliques() {
+    const cliques = data.cliques;
+    cliques.forEach(clique => {
+        clique.forEach(nodeId => {
+            d3.select(`circle[data-id='${nodeId}']`)
+                .attr("stroke", "red")
+                .attr("stroke-width", 2);
+        });
+    });
+    console.log("Cliques shown");
+}

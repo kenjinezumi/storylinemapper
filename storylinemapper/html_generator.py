@@ -1,5 +1,3 @@
-# html_generator.py
-
 import json
 import os
 from storylinemapper.network_analysis.metrics import calculate_all_metrics
@@ -29,12 +27,18 @@ def load_js(script: str, json_data: str, show_actions: bool, width: int, height:
             }}
         }}
         
-        displayMetrics();
+        // displayMetrics(); // Commented out to not display all metrics
         """
     return js_code
 
 def generate_html(G, partition: dict, community_names: dict, title: str = "Entity Relation Network", style: str = "style1", script: str = "script1", show_actions: bool = False, width: str = "960px", height: str = "600px", design_options: bool = False) -> str:
-    nodes = [{"id": node, "size": data["size"], "count": data["size"], "community": partition[node]} for node, data in G.nodes(data=True)]
+    metrics = calculate_all_metrics(G)
+    nodes = [{"id": node, "size": data["size"], "count": data["size"], "community": partition[node],
+              "degree_centrality": metrics["degree_centrality"].get(node, 0),
+              "betweenness_centrality": metrics["betweenness_centrality"].get(node, 0),
+              "closeness_centrality": metrics["closeness_centrality"].get(node, 0),
+              "eigenvector_centrality": metrics["eigenvector_centrality"].get(node, 0),
+              "effective_size": metrics["effective_size"].get(node, 0)} for node, data in G.nodes(data=True)]
     links = [{"source": u, "target": v, "actions": data["actions"]} for u, v, data in G.edges(data=True)]
     
     data = {
@@ -47,29 +51,33 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     css_content = load_css(style)
 
     if design_options:
-        metrics = calculate_all_metrics(G)
         js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options, metrics)
         community_options = "\n".join([f'<option value="{community}">{name}</option>' for community, name in community_names.items()])
         additional_html = f"""
-        <div>
-            <button id="filter-btn">Filter Nodes</button>
-            <button id="update-design-btn">Update Design</button>
-            <button id="export-svg-btn">Export as SVG</button>
-            <button id="export-png-btn">Export as PNG</button>
+        <div class="top-bar">
+            <button class="icon-button" id="design-btn" title="Design"><i class="material-icons">brush</i></button>
+            <button class="icon-button" id="analysis-btn" title="Analysis"><i class="material-icons">analytics</i></button>
+            <button class="icon-button" id="export-btn" title="Export"><i class="material-icons">save_alt</i></button>
+        </div>
+        <div class="option-panel" id="design-options">
+            <h4>Design</h4>
             <input type="color" id="node-color-picker" value="#69b3a2"> Node Color
             <input type="range" id="node-size-slider" min="1" max="20" value="10"> Node Size
             <input type="range" id="link-width-slider" min="1" max="10" value="1"> Link Width
-            <select id="force-type-selector">
-                <option value="default">Default Forces</option>
-                <option value="strong">Strong Forces</option>
-                <option value="weak">Weak Forces</option>
-            </select>
-            <select id="community-filter">
-                <option value="all">All Communities</option>
-                {community_options}
-            </select>
-            <input type="text" id="exclude-nodes" placeholder="Exclude Nodes (comma separated)">
-            <input type="text" id="node-comments" placeholder="Add Comment to Node">
+        </div>
+        <div class="option-panel" id="analysis-options">
+            <h4>Analysis</h4>
+            <button id="anomaly-detection-btn">Anomaly Detection</button>
+            <button id="show-cliques-btn">Show Cliques</button>
+            <button id="highlight-k-core-btn">Highlight K-cores</button>
+            <input type="text" id="source-node" placeholder="Source Node">
+            <input type="text" id="target-node" placeholder="Target Node">
+            <button id="highlight-path-btn">Highlight Shortest Path</button>
+        </div>
+        <div class="option-panel" id="export-options">
+            <h4>Export</h4>
+            <button id="export-svg-btn">Export as SVG</button>
+            <button id="export-png-btn">Export as PNG</button>
         </div>
         <div id="metrics"></div>
         """
@@ -82,14 +90,58 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
 <html>
 <head>
     <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     <style>
         {css_content}
+        body {{
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }}
+        .top-bar {{
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            height: 50px;
+            flex-shrink: 0;
+        }}
+        .icon-button {{
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 24px;
+        }}
+        .option-panel {{
+            display: none;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            position: absolute;
+            top: 50px;
+            z-index: 1001;
+        }}
+        .main-content {{
+            flex-grow: 1;
+            position: relative;
+        }}
+        svg {{
+            width: 100%;
+            height: 100%;
+        }}
     </style>
 </head>
-<body style="width: {width}; height: {height};">
+<body>
     {additional_html}
-    <div>
+    <div class="main-content">
         <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
         <script>
             console.log('Data: {json_data}');
             console.log('Show Actions: {show_actions}');
@@ -98,6 +150,7 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     </div>
 </body>
 </html>
-    """
+"""
+
     print("Generated HTML:", html_template)  # Add this line for debugging
     return html_template
