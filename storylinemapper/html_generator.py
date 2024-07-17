@@ -27,7 +27,7 @@ def load_js(script: str, json_data: str, show_actions: bool, width: int, height:
             }}
         }}
         
-        displayMetrics();
+        // displayMetrics();
         """
     return js_code
 
