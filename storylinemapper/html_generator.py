@@ -27,7 +27,7 @@ def load_js(script: str, json_data: str, show_actions: bool, width: int, height:
             }}
         }}
         
-        // displayMetrics();
+        // displayMetrics(); // Commented out to not display all metrics
         """
     return js_code
 
@@ -54,35 +54,41 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options, metrics)
         community_options = "\n".join([f'<option value="{community}">{name}</option>' for community, name in community_names.items()])
         additional_html = f"""
-        <div>
-            <button id="filter-btn">Filter Nodes</button>
-            <button id="update-design-btn">Update Design</button>
-            <button id="export-svg-btn">Export as SVG</button>
-            <button id="export-png-btn">Export as PNG</button>
-            <input type="color" id="node-color-picker" value="#69b3a2"> Node Color
-            <input type="range" id="node-size-slider" min="1" max="20" value="10"> Node Size
-            <input type="range" id="link-width-slider" min="1" max="10" value="1"> Link Width
-            <select id="force-type-selector">
-                <option value="default">Default Forces</option>
-                <option value="strong">Strong Forces</option>
-                <option value="weak">Weak Forces</option>
-            </select>
-            <select id="community-filter">
-                <option value="all">All Communities</option>
-                {community_options}
-            </select>
-            <input type="text" id="exclude-nodes" placeholder="Exclude Nodes (comma separated)">
-            <input type="text" id="node-comments" placeholder="Add Comment to Node">
-            <input type="number" id="k-core-value" min="1" placeholder="Enter k value">
-            <button id="highlight-k-core-btn">Highlight k-core</button>
-            <button id="show-cliques-btn">Show Cliques</button>
+        <div class="mdc-card">
+            <div class="mdc-card__actions">
+                <div class="mdc-card__action-buttons">
+                    <button class="mdc-button mdc-card__action mdc-card__action--button" id="filter-btn">Filter Nodes</button>
+                    <button class="mdc-button mdc-card__action mdc-card__action--button" id="update-design-btn">Update Design</button>
+                    <button class="mdc-button mdc-card__action mdc-card__action--button" id="export-svg-btn">Export as SVG</button>
+                    <button class="mdc-button mdc-card__action mdc-card__action--button" id="export-png-btn">Export as PNG</button>
+                </div>
+                <div class="mdc-card__action-icons">
+                    <input type="color" class="mdc-icon-button" id="node-color-picker" value="#69b3a2"> Node Color
+                    <input type="range" class="mdc-slider" id="node-size-slider" min="1" max="20" value="10"> Node Size
+                    <input type="range" class="mdc-slider" id="link-width-slider" min="1" max="10" value="1"> Link Width
+                    <select class="mdc-select" id="force-type-selector">
+                        <option value="default">Default Forces</option>
+                        <option value="strong">Strong Forces</option>
+                        <option value="weak">Weak Forces</option>
+                    </select>
+                    <select class="mdc-select" id="community-filter">
+                        <option value="all">All Communities</option>
+                        {community_options}
+                    </select>
+                    <input type="text" class="mdc-text-field" id="exclude-nodes" placeholder="Exclude Nodes (comma separated)">
+                    <input type="text" class="mdc-text-field" id="node-comments" placeholder="Add Comment to Node">
+                    <input type="number" class="mdc-text-field" id="k-core-value" min="1" placeholder="Enter k value">
+                    <button class="mdc-button" id="highlight-k-core-btn">Highlight k-core</button>
+                    <button class="mdc-button" id="show-cliques-btn">Show Cliques</button>
+                </div>
+            </div>
+            <div>
+                <input type="text" class="mdc-text-field" id="source-node" placeholder="Source Node">
+                <input type="text" class="mdc-text-field" id="target-node" placeholder="Target Node">
+                <button class="mdc-button" id="highlight-path-btn">Highlight Shortest Path</button>
+            </div>
+            <div id="metrics" class="mdc-card__media"></div>
         </div>
-        <div>
-            <input type="text" id="source-node" placeholder="Source Node">
-            <input type="text" id="target-node" placeholder="Target Node">
-            <button id="highlight-path-btn">Highlight Shortest Path</button>
-        </div>
-        <div id="metrics"></div>
         """
     else:
         js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options, {})
@@ -93,6 +99,8 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
 <html>
 <head>
     <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     <style>
         {css_content}
     </style>
@@ -101,6 +109,7 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     {additional_html}
     <div>
         <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
         <script>
             console.log('Data: {json_data}');
             console.log('Show Actions: {show_actions}');
