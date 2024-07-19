@@ -155,9 +155,20 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
             z-index: 1001;
             width: 300px;
         }}
+        select {{
+            background-color: white;
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #f2f2f2;
+            border-radius: 2px;
+            height: 3rem;
+            display:block;
+        }}
         .main-content {{
             flex-grow: 1;
             position: relative;
+            width:100%;
+            heigth:100%;
         }}
         svg {{
             width: 100%;
