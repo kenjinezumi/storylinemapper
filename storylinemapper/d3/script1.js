@@ -8,6 +8,20 @@ console.log("Width:", width);
 console.log("Height:", height);
 console.log("Show Actions:", showActions);
 
+// Predefined color sets
+const colorSets = [
+    ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf", "#999999", "#66c2a5"],
+    ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d", "#666666", "#a6cee3", "#1f78b4"],
+    ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd"],
+    ["#d73027", "#fc8d59", "#fee08b", "#d9ef8b", "#91cf60", "#1a9850", "#d73027", "#313695", "#4575b4", "#91bfdb"],
+    ["#003f5c", "#58508d", "#bc5090", "#ff6361", "#ffa600", "#d45087", "#f95d6a", "#ff7c43", "#665191", "#a05195"],
+    ["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a"],
+    ["#b3e2cd", "#fdcdac", "#cbd5e8", "#f4cae4", "#e6f5c9", "#fff2ae", "#f1e2cc", "#cccccc", "#8c96c6", "#b3cde3"],
+    ["#7fc97f", "#beaed4", "#fdc086", "#ffff99", "#386cb0", "#f0027f", "#bf5b17", "#666666", "#99d8c9", "#66c2a4"],
+    ["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a"],
+    ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf", "#999999", "#66c2a5"]
+];
+
 // Create SVG
 const svg = d3.select(".main-content")
     .append("svg")
@@ -35,8 +49,18 @@ svg.append("defs").append("marker")
 
 console.log("Arrowhead marker added");
 
+// Default color set
+let currentColorSet = colorSets[0];
+
+// Function to update colors based on selected color set
+function updateColors() {
+    const colorSetIndex = document.getElementById("color-set").value;
+    currentColorSet = colorSets[colorSetIndex];
+    updateDesign();
+}
+
 // Color scale for communities
-const color = d3.scaleOrdinal(d3.schemeCategory10);
+const color = d3.scaleOrdinal(currentColorSet);
 
 // Create community centers
 const communities = d3.groups(data.nodes, d => d.community)
@@ -280,11 +304,10 @@ function filterNodes() {
 }
 
 function updateDesign() {
-    const nodeColor = document.getElementById("node-color-picker").value;
     const nodeSize = +document.getElementById("node-size-slider").value;
     const linkWidth = +document.getElementById("link-width-slider").value;
 
-    node.attr("fill", nodeColor)
+    node.attr("fill", d => currentColorSet[d.community % currentColorSet.length])
         .attr("r", nodeSize);
 
     link.attr("stroke-width", linkWidth);
@@ -441,7 +464,7 @@ document.getElementById("highlight-path-btn").addEventListener("click", highligh
 document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCores);
 document.getElementById("show-cliques-btn").addEventListener("click", showCliques);
 
-document.getElementById("node-color-picker").addEventListener("input", updateDesign);
+document.getElementById("color-set").addEventListener("change", updateColors);
 document.getElementById("node-size-slider").addEventListener("input", updateDesign);
 document.getElementById("link-width-slider").addEventListener("input", updateDesign);
 
@@ -449,7 +472,11 @@ console.log("Added filters and design options");
 
 function togglePanel(panelId) {
     const panel = document.getElementById(panelId);
-    panel.style.display = panel.style.display === "none" ? "block" : "none";
+    const isVisible = panel.style.display === "block";
+    document.querySelectorAll('.option-panel').forEach(p => p.style.display = "none");
+    if (!isVisible) {
+        panel.style.display = "block";
+    }
 }
 
 // Add logic for highlighting shortest path

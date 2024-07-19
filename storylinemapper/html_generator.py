@@ -54,32 +54,58 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options, metrics)
         community_options = "\n".join([f'<option value="{community}">{name}</option>' for community, name in community_names.items()])
         additional_html = f"""
-        <div class="top-bar">
-            <button class="icon-button" id="design-btn" title="Design"><i class="material-icons">brush</i></button>
-            <button class="icon-button" id="analysis-btn" title="Analysis"><i class="material-icons">analytics</i></button>
-            <button class="icon-button" id="export-btn" title="Export"><i class="material-icons">save_alt</i></button>
-        </div>
-        <div class="option-panel" id="design-options">
-            <h4>Design</h4>
-            <input type="color" id="node-color-picker" value="#69b3a2"> Node Color
-            <input type="range" id="node-size-slider" min="1" max="20" value="10"> Node Size
-            <input type="range" id="link-width-slider" min="1" max="10" value="1"> Link Width
-        </div>
-        <div class="option-panel" id="analysis-options">
-            <h4>Analysis</h4>
-            <button id="anomaly-detection-btn">Anomaly Detection</button>
-            <button id="show-cliques-btn">Show Cliques</button>
-            <button id="highlight-k-core-btn">Highlight K-cores</button>
-            <input type="text" id="source-node" placeholder="Source Node">
-            <input type="text" id="target-node" placeholder="Target Node">
-            <button id="highlight-path-btn">Highlight Shortest Path</button>
-        </div>
-        <div class="option-panel" id="export-options">
-            <h4>Export</h4>
-            <button id="export-svg-btn">Export as SVG</button>
-            <button id="export-png-btn">Export as PNG</button>
-        </div>
-        <div id="metrics"></div>
+       <div class="top-bar">
+    <button class="icon-button" id="design-btn" title="Design"><i class="material-icons">brush</i></button>
+    <button class="icon-button" id="analysis-btn" title="Analysis"><i class="material-icons">analytics</i></button>
+    <button class="icon-button" id="export-btn" title="Export"><i class="material-icons">save_alt</i></button>
+</div>
+<div class="option-panel" id="design-options">
+    <h4>Design</h4>
+    <label for="color-set">Choose a color set:</label>
+    <select id="color-set">
+        <option value="0">Color Set 1</option>
+        <option value="1">Color Set 2</option>
+        <option value="2">Color Set 3</option>
+        <option value="3">Color Set 4</option>
+        <option value="4">Color Set 5</option>
+        <option value="5">Color Set 6</option>
+        <option value="6">Color Set 7</option>
+        <option value="7">Color Set 8</option>
+        <option value="8">Color Set 9</option>
+        <option value="9">Color Set 10</option>
+    </select>
+    <br>
+    <label for="node-size-slider">Node Size</label>
+    <input type="range" id="node-size-slider" min="1" max="20" value="10">
+    <br>
+    <label for="link-width-slider">Link Width</label>
+    <input type="range" id="link-width-slider" min="1" max="10" value="1">
+</div>
+<div class="option-panel" id="analysis-options">
+    <h4>Analysis</h4>
+    <button id="anomaly-detection-btn">Anomaly Detection</button>
+    <button id="show-cliques-btn">Show Cliques</button>
+    <button id="highlight-k-core-btn">Highlight K-cores</button>
+    <input type="text" id="source-node" placeholder="Source Node">
+    <input type="text" id="target-node" placeholder="Target Node">
+    <button id="highlight-path-btn">Highlight Shortest Path</button>
+</div>
+<div class="option-panel" id="export-options">
+    <h4>Export</h4>
+    <button id="export-svg-btn">Export as SVG</button>
+    <button id="export-png-btn">Export as PNG</button>
+</div>
+<div id="metrics"></div>
+<div class="main-content">
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+        console.log('Data: {json_data}');
+        console.log('Show Actions: {show_actions}');
+        {js_content}
+    </script>
+</div>
+
         """
     else:
         js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options, {})
@@ -124,8 +150,10 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
             border: 1px solid #ccc;
             padding: 10px;
             position: absolute;
-            top: 50px;
+            top: 80px;
+            left: 10px;
             z-index: 1001;
+            width: 300px;
         }}
         .main-content {{
             flex-grow: 1;
