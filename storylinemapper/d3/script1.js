@@ -427,8 +427,6 @@ document.getElementById("export-btn").addEventListener("mouseout", function() {
     }
 });
 
-
-
 // Add event listeners for download options
 document.getElementById("design-btn").addEventListener("click", function() {
     togglePanel("design-options");
@@ -442,6 +440,10 @@ document.getElementById("export-btn").addEventListener("click", function() {
 document.getElementById("highlight-path-btn").addEventListener("click", highlightShortestPath);
 document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCores);
 document.getElementById("show-cliques-btn").addEventListener("click", showCliques);
+
+document.getElementById("node-color-picker").addEventListener("input", updateDesign);
+document.getElementById("node-size-slider").addEventListener("input", updateDesign);
+document.getElementById("link-width-slider").addEventListener("input", updateDesign);
 
 console.log("Added filters and design options");
 
