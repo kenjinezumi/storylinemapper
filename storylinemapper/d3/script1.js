@@ -322,7 +322,114 @@ function exportNetwork(format) {
     }
 }
 
-// Add event listeners for filters and design options
+// Add event listener for filters and design options on hover
+
+document.getElementById("design-btn").addEventListener("mouseover", function() {
+    // Create a tooltip element if it doesn't already exist
+    let tooltip = document.getElementById("tooltip");
+    if (!tooltip) {
+        tooltip = document.createElement("div");
+        tooltip.id = "tooltip";
+        tooltip.style.position = "absolute";
+        tooltip.style.background = "lightsteelblue";
+        tooltip.style.border = "1px solid #ccc";
+        tooltip.style.borderRadius = "8px";
+        tooltip.style.padding = "8px";
+        tooltip.style.pointerEvents = "none";
+        tooltip.style.opacity = 0;
+        document.body.appendChild(tooltip);
+    }
+
+    // Set the tooltip content
+    tooltip.innerHTML = "This is the Design button";
+
+    // Position the tooltip
+    tooltip.style.left = (event.pageX + 10) + "px";
+    tooltip.style.top = (event.pageY - 10) + "px";
+    tooltip.style.opacity = 1;
+});
+
+document.getElementById("design-btn").addEventListener("mouseout", function() {
+    // Hide the tooltip when mouse leaves
+    const tooltip = document.getElementById("tooltip");
+    if (tooltip) {
+        tooltip.style.opacity = 0;
+    }
+});
+
+// Add event listener for analysis on hover
+
+document.getElementById("analysis-btn").addEventListener("mouseover", function() {
+    // Create a tooltip element if it doesn't already exist
+    let tooltip = document.getElementById("tooltip");
+    if (!tooltip) {
+        tooltip = document.createElement("div");
+        tooltip.id = "tooltip";
+        tooltip.style.position = "absolute";
+        tooltip.style.background = "lightsteelblue";
+        tooltip.style.border = "1px solid #ccc";
+        tooltip.style.borderRadius = "8px";
+        tooltip.style.padding = "8px";
+        tooltip.style.pointerEvents = "none";
+        tooltip.style.opacity = 0;
+        document.body.appendChild(tooltip);
+    }
+
+    // Set the tooltip content
+    tooltip.innerHTML = "This is the Analysis button";
+
+    // Position the tooltip
+    tooltip.style.left = (event.pageX + 10) + "px";
+    tooltip.style.top = (event.pageY - 10) + "px";
+    tooltip.style.opacity = 1;
+});
+
+document.getElementById("analysis-btn").addEventListener("mouseout", function() {
+    // Hide the tooltip when mouse leaves
+    const tooltip = document.getElementById("tooltip");
+    if (tooltip) {
+        tooltip.style.opacity = 0;
+    }
+});
+
+// Add event listener for export on hover
+
+document.getElementById("export-btn").addEventListener("mouseover", function() {
+    // Create a tooltip element if it doesn't already exist
+    let tooltip = document.getElementById("tooltip");
+    if (!tooltip) {
+        tooltip = document.createElement("div");
+        tooltip.id = "tooltip";
+        tooltip.style.position = "absolute";
+        tooltip.style.background = "lightsteelblue";
+        tooltip.style.border = "1px solid #ccc";
+        tooltip.style.borderRadius = "8px";
+        tooltip.style.padding = "8px";
+        tooltip.style.pointerEvents = "none";
+        tooltip.style.opacity = 0;
+        document.body.appendChild(tooltip);
+    }
+
+    // Set the tooltip content
+    tooltip.innerHTML = "This is the Export button";
+
+    // Position the tooltip
+    tooltip.style.left = (event.pageX + 10) + "px";
+    tooltip.style.top = (event.pageY - 10) + "px";
+    tooltip.style.opacity = 1;
+});
+
+document.getElementById("export-btn").addEventListener("mouseout", function() {
+    // Hide the tooltip when mouse leaves
+    const tooltip = document.getElementById("tooltip");
+    if (tooltip) {
+        tooltip.style.opacity = 0;
+    }
+});
+
+
+
+// Add event listeners for download options
 document.getElementById("design-btn").addEventListener("click", function() {
     togglePanel("design-options");
 });

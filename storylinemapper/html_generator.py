@@ -108,7 +108,7 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
             background-color: #333;
             color: white;
             padding: 10px;
-            height: 50px;
+            height: 30px;
             flex-shrink: 0;
         }}
         .icon-button {{
