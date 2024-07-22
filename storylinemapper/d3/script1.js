@@ -1,5 +1,4 @@
 const data = {json_data};
-
 const showActions = {show_actions};
 const width = window.innerWidth;
 const height = window.innerHeight - 50; // Adjust height to accommodate the top bar
@@ -21,6 +20,19 @@ const colorSets = [
     ["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a"],
     ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf", "#999999", "#66c2a5"]
 ];
+
+// Default color set
+let currentColorSet = colorSets[0];
+
+// Function to update colors based on selected color set
+function updateColors() {
+    const colorSetIndex = document.getElementById("color-set").value;
+    currentColorSet = colorSets[colorSetIndex];
+    updateDesign();
+}
+
+// Color scale for communities
+const color = d3.scaleOrdinal(currentColorSet);
 
 // Create SVG
 const svg = d3.select(".main-content")
@@ -48,19 +60,6 @@ svg.append("defs").append("marker")
     .style("stroke", "none");
 
 console.log("Arrowhead marker added");
-
-// Default color set
-let currentColorSet = colorSets[0];
-
-// Function to update colors based on selected color set
-function updateColors() {
-    const colorSetIndex = document.getElementById("color-set").value;
-    currentColorSet = colorSets[colorSetIndex];
-    updateDesign();
-}
-
-// Color scale for communities
-const color = d3.scaleOrdinal(currentColorSet);
 
 // Create community centers
 const communities = d3.groups(data.nodes, d => d.community)
@@ -91,7 +90,7 @@ const communityLabels = svg.append("g")
 console.log("Community labels added");
 
 // Simulation
-const simulation = d3.forceSimulation(data.nodes)
+let simulation = d3.forceSimulation(data.nodes)
     .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
     .force("charge", d3.forceManyBody().strength(-30))
     .force("collision", d3.forceCollide().radius(d => d.size * 2 + 5))
@@ -346,9 +345,7 @@ function exportNetwork(format) {
 }
 
 // Add event listener for filters and design options on hover
-
 document.getElementById("design-btn").addEventListener("mouseover", function() {
-    // Create a tooltip element if it doesn't already exist
     let tooltip = document.getElementById("tooltip");
     if (!tooltip) {
         tooltip = document.createElement("div");
@@ -363,27 +360,20 @@ document.getElementById("design-btn").addEventListener("mouseover", function() {
         document.body.appendChild(tooltip);
     }
 
-    // Set the tooltip content
     tooltip.innerHTML = "This is the Design button";
-
-    // Position the tooltip
     tooltip.style.left = (event.pageX + 10) + "px";
     tooltip.style.top = (event.pageY - 10) + "px";
     tooltip.style.opacity = 1;
 });
 
 document.getElementById("design-btn").addEventListener("mouseout", function() {
-    // Hide the tooltip when mouse leaves
     const tooltip = document.getElementById("tooltip");
     if (tooltip) {
         tooltip.style.opacity = 0;
     }
 });
 
-// Add event listener for analysis on hover
-
 document.getElementById("analysis-btn").addEventListener("mouseover", function() {
-    // Create a tooltip element if it doesn't already exist
     let tooltip = document.getElementById("tooltip");
     if (!tooltip) {
         tooltip = document.createElement("div");
@@ -398,27 +388,20 @@ document.getElementById("analysis-btn").addEventListener("mouseover", function()
         document.body.appendChild(tooltip);
     }
 
-    // Set the tooltip content
     tooltip.innerHTML = "This is the Analysis button";
-
-    // Position the tooltip
     tooltip.style.left = (event.pageX + 10) + "px";
     tooltip.style.top = (event.pageY - 10) + "px";
     tooltip.style.opacity = 1;
 });
 
 document.getElementById("analysis-btn").addEventListener("mouseout", function() {
-    // Hide the tooltip when mouse leaves
     const tooltip = document.getElementById("tooltip");
     if (tooltip) {
         tooltip.style.opacity = 0;
     }
 });
 
-// Add event listener for export on hover
-
 document.getElementById("export-btn").addEventListener("mouseover", function() {
-    // Create a tooltip element if it doesn't already exist
     let tooltip = document.getElementById("tooltip");
     if (!tooltip) {
         tooltip = document.createElement("div");
@@ -433,24 +416,19 @@ document.getElementById("export-btn").addEventListener("mouseover", function() {
         document.body.appendChild(tooltip);
     }
 
-    // Set the tooltip content
     tooltip.innerHTML = "This is the Export button";
-
-    // Position the tooltip
     tooltip.style.left = (event.pageX + 10) + "px";
     tooltip.style.top = (event.pageY - 10) + "px";
     tooltip.style.opacity = 1;
 });
 
 document.getElementById("export-btn").addEventListener("mouseout", function() {
-    // Hide the tooltip when mouse leaves
     const tooltip = document.getElementById("tooltip");
     if (tooltip) {
         tooltip.style.opacity = 0;
     }
 });
 
-// Add event listeners for download options
 document.getElementById("design-btn").addEventListener("click", function() {
     togglePanel("design-options");
 });
@@ -467,6 +445,7 @@ document.getElementById("show-cliques-btn").addEventListener("click", showClique
 document.getElementById("color-set").addEventListener("change", updateColors);
 document.getElementById("node-size-slider").addEventListener("input", updateDesign);
 document.getElementById("link-width-slider").addEventListener("input", updateDesign);
+document.getElementById("layout-select").addEventListener("change", updateLayout);
 
 console.log("Added filters and design options");
 
@@ -575,7 +554,6 @@ function showTooltip(event, d) {
         .style("left", (event.pageX + 10) + "px")
         .style("top", (event.pageY - 10) + "px");
 
-    // Add event listeners for info icons
     d3.select("#degree-info").on("mouseover", (e) => showInfo(e, "Degree Centrality: measures the number of direct connections a node has."));
     d3.select("#betweenness-info").on("mouseover", (e) => showInfo(e, "Betweenness Centrality: indicates how often a node appears on shortest paths between other nodes."));
     d3.select("#closeness-info").on("mouseover", (e) => showInfo(e, "Closeness Centrality: reflects how close a node is to all other nodes in the network."));
@@ -617,3 +595,77 @@ function showCliques() {
     });
     console.log("Cliques shown");
 }
+
+// Ensure ngraph libraries are loaded before using them
+function loadScript(url, callback) {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.onload = callback;
+    script.src = url;
+    document.head.appendChild(script);
+}
+
+function ensureNgraphLibraries(callback) {
+    if (typeof ngraph === 'undefined' || typeof ngraph.graph !== 'function' || typeof ngraph.forcelayout !== 'function') {
+        loadScript("https://unpkg.com/ngraph.graph@1.0.0/dist/ngraph.graph.min.js", function() {
+            loadScript("https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js", callback);
+        });
+    } else {
+        callback();
+    }
+}
+
+// Function to apply ForceAtlas2 layout
+function applyForceAtlas2() {
+    ensureNgraphLibraries(function() {
+        const graph = ngraph.graph();
+
+        data.nodes.forEach(node => graph.addNode(node.id));
+        data.links.forEach(link => graph.addLink(link.source, link.target));
+
+        const layout = ngraph.forcelayout(graph, { iterationsPerRender: 1 });
+
+        function runLayout() {
+            for (let i = 0; i < 10; i++) layout.step();
+            data.nodes.forEach(node => {
+                const pos = layout.getNodePosition(node.id);
+                node.x = pos.x;
+                node.y = pos.y;
+            });
+            ticked();
+            if (layout.isStable()) {
+                cancelAnimationFrame(runLayout);
+            } else {
+                requestAnimationFrame(runLayout);
+            }
+        }
+
+        runLayout();
+    });
+}
+
+// Function to apply D3 force layout
+function applyD3ForceLayout() {
+    simulation
+        .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
+        .force("charge", d3.forceManyBody().strength(-30))
+        .force("collision", d3.forceCollide().radius(d => d.size * 2 + 5))
+        .on("tick", ticked)
+        .alpha(1)
+        .restart();
+}
+
+// Function to update layout
+function updateLayout() {
+    const layout = document.getElementById("layout-select").value;
+    if (layout === "forceatlas2") {
+        applyForceAtlas2();
+    } else {
+        applyD3ForceLayout();
+    }
+}
+
+document.getElementById("layout-select").addEventListener("change", updateLayout);
+
+// Default initialization with D3 force layout
+applyD3ForceLayout();

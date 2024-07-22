@@ -61,6 +61,11 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
 </div>
 <div class="option-panel" id="design-options">
     <h4>Design</h4>
+    <label for="layout-select">Layout:</label>
+    <select id="layout-select">
+        <option value="d3">D3 Force</option>
+        <option value="forceatlas2">ForceAtlas2</option>
+    </select>
     <label for="color-set">Choose a color set:</label>
     <select id="color-set">
         <option value="0">Color Set 1</option>
@@ -104,7 +109,6 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         console.log('Show Actions: {show_actions}');
     </script>
 </div>
-
         """
     else:
         js_content = load_js(script, json_data, show_actions, int(width[:-2]), int(height[:-2]), design_options, {})
@@ -167,13 +171,12 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
             flex-grow: 1;
             position: relative;
             width:100%;
-            heigth:100%;
+            height:100%;
         }}
         svg {{
             width: 100%;
             height: 100%;
         }}
-    
     </style>
 </head>
 <body>
@@ -181,6 +184,8 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     <div class="main-content">
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+        <script src="https://unpkg.com/ngraph.graph@1.0.0/dist/ngraph.graph.min.js"></script>
+        <script src="https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js"></script>        
         <script>
             console.log('Data: {json_data}');
             console.log('Show Actions: {show_actions}');
