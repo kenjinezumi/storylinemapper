@@ -602,84 +602,80 @@ function loadScript(url, callback) {
 }
 
 function ensureNgraphLibraries(callback) {
-    if (typeof ngraph === 'undefined' || typeof ngraph.graph !== 'function' || typeof ngraph.forcelayout !== 'function') {
-        loadScript("https://unpkg.com/ngraph.graph@1.0.0/dist/ngraph.graph.min.js", function() {
-            loadScript("https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js", function() {
-                loadScript("https://unpkg.com/ngraph.yifanhulayout@0.1.1/dist/ngraph.yifanhulayout.min.js", callback);
+    const libraries = [
+        { url: "https://unpkg.com/ngraph.graph@1.0.0/dist/ngraph.graph.min.js" },
+        { url: "https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js" },
+        { url: "https://unpkg.com/ngraph.yifanhulayout@0.1.1/dist/ngraph.yifanhulayout.min.js" },
+        { url: "https://unpkg.com/ngraph.openord@0.0.2/dist/ngraph.openord.min.js" },
+        { url: "https://unpkg.com/ngraph.noack@1.1.0/dist/ngraph.noack.min.js" },
+        { url: "https://unpkg.com/ngraph.kamada@0.0.1/dist/ngraph.kamada.min.js" },
+        { url: "https://unpkg.com/ngraph.gridlayout@1.1.0/dist/ngraph.gridlayout.min.js" },
+        { url: "https://unpkg.com/ngraph.randomlayout@0.0.2/dist/ngraph.randomlayout.min.js" },
+        { url: "https://unpkg.com/ngraph.isomap@0.1.0/dist/ngraph.isomap.min.js" },
+        { url: "https://unpkg.com/ngraph.mds@1.1.0/dist/ngraph.mds.min.js" },
+        { url: "https://unpkg.com/ngraph.sugiyama@0.0.3/dist/ngraph.sugiyama.min.js" },
+    ];
+    let loaded = 0;
+
+    function loadNext() {
+        if (loaded >= libraries.length) {
+            callback();
+        } else {
+            loadScript(libraries[loaded].url, function () {
+                loaded++;
+                loadNext();
             });
-        });
-    } else {
-        callback();
+        }
     }
+
+    loadNext();
 }
 
-// Function to apply ForceAtlas2 layout
-function applyForceAtlas2() {
-    ensureNgraphLibraries(function() {
+// Function to apply layout
+function applyNgraphLayout(layoutType) {
+    ensureNgraphLibraries(function () {
         const graph = ngraph.graph();
 
         data.nodes.forEach(node => graph.addNode(node.id));
         data.links.forEach(link => graph.addLink(link.source, link.target));
 
-        const layout = ngraph.forcelayout(graph, { iterationsPerRender: 1 });
+        let layout;
 
-        function runLayout() {
-            for (let i = 0; i < 10; i++) layout.step();
-            data.nodes.forEach(node => {
-                const pos = layout.getNodePosition(node.id);
-                node.x = pos.x;
-                node.y = pos.y;
-            });
-            ticked();
-            if (layout.isStable()) {
-                cancelAnimationFrame(runLayout);
-            } else {
-                requestAnimationFrame(runLayout);
-            }
+        switch (layoutType) {
+            case "forceatlas2":
+                layout = ngraph.forcelayout(graph, { iterationsPerRender: 1 });
+                break;
+            case "yifanhulayout":
+                layout = ngraph.yifanhulayout(graph);
+                break;
+            case "fruchtermanreingold":
+                layout = ngraph.forcelayout(graph);
+                break;
+            case "openord":
+                layout = ngraph.openord(graph);
+                break;
+            case "noack":
+                layout = ngraph.noack(graph);
+                break;
+            case "kamada":
+                layout = ngraph.kamada(graph);
+                break;
+            case "grid":
+                layout = ngraph.gridlayout(graph);
+                break;
+            case "random":
+                layout = ngraph.randomlayout(graph);
+                break;
+            case "isomap":
+                layout = ngraph.isomap(graph);
+                break;
+            case "mds":
+                layout = ngraph.mds(graph);
+                break;
+            case "sugiyama":
+                layout = ngraph.sugiyama(graph);
+                break;
         }
-
-        runLayout();
-    });
-}
-
-// Function to apply Yifan Hu layout
-function applyYifanHuLayout() {
-    ensureNgraphLibraries(function() {
-        const graph = ngraph.graph();
-
-        data.nodes.forEach(node => graph.addNode(node.id));
-        data.links.forEach(link => graph.addLink(link.source, link.target));
-
-        const layout = ngraphyifanhulayout(graph, {});
-
-        function runLayout() {
-            layout.step();
-            data.nodes.forEach(node => {
-                const pos = layout.getNodePosition(node.id);
-                node.x = pos.x;
-                node.y = pos.y;
-            });
-            ticked();
-            if (layout.isStable()) {
-                cancelAnimationFrame(runLayout);
-            } else {
-                requestAnimationFrame(runLayout);
-            }
-        }
-
-        runLayout();
-    });
-}
-
-// Function to apply Fruchterman-Reingold layout
-function applyFruchtermanReingoldLayout() {
-    ensureNgraphLibraries(function() {
-        const graph = ngraph.graph();
-
-        data.nodes.forEach(node => graph.addNode(node.id));
-        data.links.forEach(link => graph.addLink(link.source, link.target));
-
-        const layout = ngraphforcelayout(graph, {});
 
         function runLayout() {
             for (let i = 0; i < 10; i++) layout.step();
@@ -742,12 +738,8 @@ function applyD3ForceLayout() {
 // Function to update layout
 function updateLayout() {
     const layout = document.getElementById("layout-select").value;
-    if (layout === "forceatlas2") {
-        applyForceAtlas2();
-    } else if (layout === "yifanhulayout") {
-        applyYifanHuLayout();
-    } else if (layout === "fruchtermanreingold") {
-        applyFruchtermanReingoldLayout();
+    if (layout === "forceatlas2" || layout === "yifanhulayout" || layout === "fruchtermanreingold" || layout === "openord" || layout === "noack" || layout === "kamada" || layout === "grid" || layout === "random" || layout === "isomap" || layout === "mds" || layout === "sugiyama") {
+        applyNgraphLayout(layout);
     } else if (layout === "circular") {
         applyCircularLayout();
     } else if (layout === "radialaxis") {

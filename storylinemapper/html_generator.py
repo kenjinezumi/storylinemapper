@@ -67,9 +67,18 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         <option value="forceatlas2">ForceAtlas2</option>
         <option value="yifanhulayout">Yifan Hu</option>
         <option value="fruchtermanreingold">Fruchterman-Reingold</option>
+        <option value="openord">OpenOrd</option>
+        <option value="noack">Noack's LinLog</option>
+        <option value="kamada">Kamada-Kawai</option>
+        <option value="grid">Grid Layout</option>
+        <option value="random">Random Layout</option>
+        <option value="isomap">Isomap Layout</option>
+        <option value="mds">MDS (Multidimensional Scaling)</option>
+        <option value="sugiyama">Sugiyama Layout</option>
         <option value="circular">Circular</option>
         <option value="radialaxis">Radial Axis</option>
     </select>
+
 
     <label for="color-set">Choose a color set:</label>
     <select id="color-set">
@@ -190,10 +199,18 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
         <script src="https://unpkg.com/ngraph.graph@1.0.0/dist/ngraph.graph.min.js"></script>
-        <script src="https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js"></script>    
+        <script src="https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js"></script>
         <script src="https://unpkg.com/ngraph.fromjson@1.0.0/dist/ngraph.fromjson.min.js"></script>
-        <script src="https://unpkg.com/ngraph.yifanhulayout@0.1.1/dist/ngraph.yifanhulayout.min.js"></script>    
-        <script>
+        <script src="https://unpkg.com/ngraph.yifanhulayout@0.1.1/dist/ngraph.yifanhulayout.min.js"></script>
+        <script src="https://unpkg.com/ngraph.openord@0.0.2/dist/ngraph.openord.min.js"></script>
+        <script src="https://unpkg.com/ngraph.noack@1.1.0/dist/ngraph.noack.min.js"></script>
+        <script src="https://unpkg.com/ngraph.kamada@0.0.1/dist/ngraph.kamada.min.js"></script>
+        <script src="https://unpkg.com/ngraph.gridlayout@1.1.0/dist/ngraph.gridlayout.min.js"></script>
+        <script src="https://unpkg.com/ngraph.randomlayout@0.0.2/dist/ngraph.randomlayout.min.js"></script>
+        <script src="https://unpkg.com/ngraph.isomap@0.1.0/dist/ngraph.isomap.min.js"></script>
+        <script src="https://unpkg.com/ngraph.mds@1.1.0/dist/ngraph.mds.min.js"></script>
+        <script src="https://unpkg.com/ngraph.sugiyama@0.0.3/dist/ngraph.sugiyama.min.js"></script>
+        <script>  
             console.log('Data: {json_data}');
             console.log('Show Actions: {show_actions}');
             {js_content}
