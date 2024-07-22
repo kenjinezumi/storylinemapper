@@ -28,6 +28,8 @@ let currentColorSet = colorSets[0];
 function updateColors() {
     const colorSetIndex = document.getElementById("color-set").value;
     currentColorSet = colorSets[colorSetIndex];
+    color.domain(d3.range(currentColorSet.length));
+    color.range(currentColorSet);
     updateDesign();
 }
 
@@ -95,7 +97,7 @@ let simulation = d3.forceSimulation(data.nodes);
 console.log("Simulation created");
 
 // Links
-const link = svg.append("g")
+let link = svg.append("g")
     .attr("class", "links")
     .selectAll("line")
     .data(data.links)
@@ -109,13 +111,13 @@ const link = svg.append("g")
 console.log("Links added");
 
 // Nodes
-const node = svg.append("g")
+let node = svg.append("g")
     .attr("class", "nodes")
-    .selectAll("circle")
+    .selectAll("path")
     .data(data.nodes)
     .enter()
-    .append("circle")
-    .attr("r", d => d.size * 2)
+    .append("path")
+    .attr("d", d3.symbol().type(d3.symbolCircle))
     .attr("fill", d => color(d.community))
     .call(d3.drag()
         .on("start", dragstarted)
@@ -126,7 +128,7 @@ const node = svg.append("g")
 console.log("Nodes added");
 
 // Labels
-const label = svg.append("g")
+let label = svg.append("g")
     .attr("class", "labels")
     .selectAll("text")
     .data(data.nodes)
@@ -230,8 +232,7 @@ function ticked() {
         .attr("y2", d => d.target.y);
 
     node
-        .attr("cx", d => d.x = Math.max(10, Math.min(width - 10, d.x)))
-        .attr("cy", d => d.y = Math.max(10, Math.min(height - 10, d.y)));
+        .attr("transform", d => `translate(${d.x},${d.y})`);
 
     label
         .attr("x", d => d.x)
@@ -299,13 +300,59 @@ function filterNodes() {
 }
 
 function updateDesign() {
-    const nodeSize = +document.getElementById("node-size-slider").value;
-    const linkWidth = +document.getElementById("link-width-slider").value;
+    const nodeShape = document.getElementById("node-shape-select").value;
+    const nodeSizeOption = document.getElementById("node-size-select").value;
+    const edgeStyle = document.getElementById("edge-style-select").value;
+    const labelOption = document.getElementById("node-label-select").value;
+    const linkWidth = document.getElementById("link-width-slider").value;
 
-    node.attr("fill", d => currentColorSet[d.community % currentColorSet.length])
-        .attr("r", nodeSize);
+    let symbolType;
+    if (nodeShape === "circle") {
+        symbolType = d3.symbolCircle;
+    } else if (nodeShape === "square") {
+        symbolType = d3.symbolSquare;
+    } else if (nodeShape === "triangle") {
+        symbolType = d3.symbolTriangle;
+    }
 
-    link.attr("stroke-width", linkWidth);
+    let nodeSizeScale;
+    if (nodeSizeOption === "fixed") {
+        nodeSizeScale = d3.scaleLinear().domain([1, 10]).range([64, 64]);
+    } else if (nodeSizeOption === "degree") {
+        nodeSizeScale = d3.scaleLinear().domain(d3.extent(data.nodes, d => d.degree_centrality)).range([16, 256]);
+    } else if (nodeSizeOption === "importance") {
+        nodeSizeScale = d3.scaleLinear().domain(d3.extent(data.nodes, d => d.importance)).range([16, 256]);
+    } else if (nodeSizeOption === "centrality") {
+        nodeSizeScale = d3.scaleLinear().domain(d3.extent(data.nodes, d => d.eigenvector_centrality)).range([16, 256]);
+    }
+
+    node.attr("d", d3.symbol().type(symbolType).size(d => nodeSizeScale(d.size)));
+
+    if (edgeStyle === "solid") {
+        link.style("stroke-dasharray", "none");
+    } else if (edgeStyle === "dashed") {
+        link.style("stroke-dasharray", "5,5");
+    } else if (edgeStyle === "dotted") {
+        link.style("stroke-dasharray", "2,2");
+    } else if (edgeStyle === "curved") {
+        link.attr("d", d => `M${d.source.x},${d.source.y} A${d.distance},${d.distance} 0 0,1 ${d.target.x},${d.target.y}`);
+    } else if (edgeStyle === "straight") {
+        link.attr("d", d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
+    }
+
+    link.style("stroke-width", linkWidth);
+
+    label.style("display", d => {
+        if (labelOption === "all") {
+            return "block";
+        } else if (labelOption === "key" && d.key) {
+            return "block";
+        } else if (labelOption === "zoom" && d.zoomLevel >= zoomLevel) {
+            return "block";
+        } else {
+            return "none";
+        }
+    });
 
     simulation.alpha(1).restart();
 }
@@ -442,6 +489,10 @@ document.getElementById("color-set").addEventListener("change", updateColors);
 document.getElementById("node-size-slider").addEventListener("input", updateDesign);
 document.getElementById("link-width-slider").addEventListener("input", updateDesign);
 document.getElementById("layout-select").addEventListener("change", updateLayout);
+document.getElementById("node-shape-select").addEventListener("change", updateDesign);
+document.getElementById("node-size-select").addEventListener("change", updateDesign);
+document.getElementById("node-label-select").addEventListener("change", updateDesign);
+document.getElementById("edge-style-select").addEventListener("change", updateDesign);
 
 console.log("Added filters and design options");
 
@@ -523,7 +574,7 @@ function highlightNode(event, d) {
 }
 
 document.addEventListener("click", function(event) {
-    if (!event.target.closest(".nodes circle") && !event.target.closest(".info-icon")) {
+    if (!event.target.closest(".nodes path") && !event.target.closest(".info-icon")) {
         node.style("opacity", 1);
         link.style("opacity", 1);
         label.style("opacity", 1);
@@ -571,7 +622,7 @@ function highlightKCores() {
     kCores.forEach((nodes, k) => {
         if (k > 1) {
             nodes.forEach(node => {
-                d3.select(`circle[data-id='${node.id}']`)
+                d3.select(`path[data-id='${node.id}']`)
                     .attr("fill", d3.rgb(color(node.community)).darker(k - 1));
             });
         }
@@ -584,7 +635,7 @@ function showCliques() {
     const cliques = data.cliques;
     cliques.forEach(clique => {
         clique.forEach(nodeId => {
-            d3.select(`circle[data-id='${nodeId}']`)
+            d3.select(`path[data-id='${nodeId}']`)
                 .attr("stroke", "red")
                 .attr("stroke-width", 2);
         });

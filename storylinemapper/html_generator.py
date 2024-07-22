@@ -94,6 +94,37 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         <option value="9">Color Set 10</option>
     </select>
     <br>
+    <label for="node-shape-select">Node Shape:</label>
+<select id="node-shape-select">
+    <option value="circle">Circle</option>
+    <option value="square">Square</option>
+    <option value="triangle">Triangle</option>
+</select>
+
+<label for="node-size-select">Node Size Based On:</label>
+<select id="node-size-select">
+    <option value="fixed">Fixed</option>
+    <option value="degree">Degree</option>
+    <option value="importance">Importance</option>
+    <option value="centrality">Centrality</option>
+</select>
+
+<label for="node-label-select">Node Labels:</label>
+<select id="node-label-select">
+    <option value="all">All</option>
+    <option value="key">Key Nodes Only</option>
+    <option value="zoom">Show on Zoom</option>
+    <option value="none">None</option>
+</select>
+
+<label for="edge-style-select">Edge Style:</label>
+<select id="edge-style-select">
+    <option value="solid">Solid</option>
+    <option value="dashed">Dashed</option>
+    <option value="dotted">Dotted</option>
+    <option value="curved">Curved</option>
+    <option value="straight">Straight</option>
+</select>
     <label for="node-size-slider">Node Size</label>
     <input type="range" id="node-size-slider" min="1" max="20" value="10">
     <br>
