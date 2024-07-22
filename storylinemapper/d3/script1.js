@@ -326,7 +326,8 @@ function updateDesign() {
         nodeSizeScale = d3.scaleLinear().domain(d3.extent(data.nodes, d => d.eigenvector_centrality)).range([16, 256]);
     }
 
-    node.attr("d", d3.symbol().type(symbolType).size(d => nodeSizeScale(d.size)));
+    node.attr("d", d3.symbol().type(symbolType).size(d => nodeSizeScale(d.size)))
+        .attr("fill", d => color(d.community));
 
     if (edgeStyle === "solid") {
         link.style("stroke-dasharray", "none");
