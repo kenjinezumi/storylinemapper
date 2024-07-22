@@ -90,11 +90,7 @@ const communityLabels = svg.append("g")
 console.log("Community labels added");
 
 // Simulation
-let simulation = d3.forceSimulation(data.nodes)
-    .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
-    .force("charge", d3.forceManyBody().strength(-30))
-    .force("collision", d3.forceCollide().radius(d => d.size * 2 + 5))
-    .on("tick", ticked);
+let simulation = d3.forceSimulation(data.nodes);
 
 console.log("Simulation created");
 
@@ -608,7 +604,9 @@ function loadScript(url, callback) {
 function ensureNgraphLibraries(callback) {
     if (typeof ngraph === 'undefined' || typeof ngraph.graph !== 'function' || typeof ngraph.forcelayout !== 'function') {
         loadScript("https://unpkg.com/ngraph.graph@1.0.0/dist/ngraph.graph.min.js", function() {
-            loadScript("https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js", callback);
+            loadScript("https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js", function() {
+                loadScript("https://unpkg.com/ngraph.yifanhulayout@0.1.1/dist/ngraph.yifanhulayout.min.js", callback);
+            });
         });
     } else {
         callback();
@@ -644,6 +642,92 @@ function applyForceAtlas2() {
     });
 }
 
+// Function to apply Yifan Hu layout
+function applyYifanHuLayout() {
+    ensureNgraphLibraries(function() {
+        const graph = ngraph.graph();
+
+        data.nodes.forEach(node => graph.addNode(node.id));
+        data.links.forEach(link => graph.addLink(link.source, link.target));
+
+        const layout = ngraphyifanhulayout(graph, {});
+
+        function runLayout() {
+            layout.step();
+            data.nodes.forEach(node => {
+                const pos = layout.getNodePosition(node.id);
+                node.x = pos.x;
+                node.y = pos.y;
+            });
+            ticked();
+            if (layout.isStable()) {
+                cancelAnimationFrame(runLayout);
+            } else {
+                requestAnimationFrame(runLayout);
+            }
+        }
+
+        runLayout();
+    });
+}
+
+// Function to apply Fruchterman-Reingold layout
+function applyFruchtermanReingoldLayout() {
+    ensureNgraphLibraries(function() {
+        const graph = ngraph.graph();
+
+        data.nodes.forEach(node => graph.addNode(node.id));
+        data.links.forEach(link => graph.addLink(link.source, link.target));
+
+        const layout = ngraphforcelayout(graph, {});
+
+        function runLayout() {
+            for (let i = 0; i < 10; i++) layout.step();
+            data.nodes.forEach(node => {
+                const pos = layout.getNodePosition(node.id);
+                node.x = pos.x;
+                node.y = pos.y;
+            });
+            ticked();
+            if (layout.isStable()) {
+                cancelAnimationFrame(runLayout);
+            } else {
+                requestAnimationFrame(runLayout);
+            }
+        }
+
+        runLayout();
+    });
+}
+
+// Function to apply Circular layout
+function applyCircularLayout() {
+    const radius = Math.min(width, height) / 2 - 50;
+    const angleStep = (2 * Math.PI) / data.nodes.length;
+
+    data.nodes.forEach((node, index) => {
+        node.x = width / 2 + radius * Math.cos(index * angleStep);
+        node.y = height / 2 + radius * Math.sin(index * angleStep);
+    });
+
+    ticked();
+}
+
+// Function to apply Radial Axis layout
+function applyRadialAxisLayout() {
+    const radius = Math.min(width, height) / 2 - 50;
+    const angleStep = (2 * Math.PI) / data.nodes.length;
+    const center = { x: width / 2, y: height / 2 };
+
+    data.nodes.forEach((node, index) => {
+        const angle = index * angleStep;
+        node.x = center.x + radius * Math.cos(angle);
+        node.y = center.y + radius * Math.sin(angle);
+    });
+
+    ticked();
+}
+
 // Function to apply D3 force layout
 function applyD3ForceLayout() {
     simulation
@@ -660,6 +744,14 @@ function updateLayout() {
     const layout = document.getElementById("layout-select").value;
     if (layout === "forceatlas2") {
         applyForceAtlas2();
+    } else if (layout === "yifanhulayout") {
+        applyYifanHuLayout();
+    } else if (layout === "fruchtermanreingold") {
+        applyFruchtermanReingoldLayout();
+    } else if (layout === "circular") {
+        applyCircularLayout();
+    } else if (layout === "radialaxis") {
+        applyRadialAxisLayout();
     } else {
         applyD3ForceLayout();
     }

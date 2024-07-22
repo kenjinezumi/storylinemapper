@@ -65,7 +65,12 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     <select id="layout-select">
         <option value="d3">D3 Force</option>
         <option value="forceatlas2">ForceAtlas2</option>
+        <option value="yifanhulayout">Yifan Hu</option>
+        <option value="fruchtermanreingold">Fruchterman-Reingold</option>
+        <option value="circular">Circular</option>
+        <option value="radialaxis">Radial Axis</option>
     </select>
+
     <label for="color-set">Choose a color set:</label>
     <select id="color-set">
         <option value="0">Color Set 1</option>
@@ -185,7 +190,9 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
         <script src="https://unpkg.com/ngraph.graph@1.0.0/dist/ngraph.graph.min.js"></script>
-        <script src="https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js"></script>        
+        <script src="https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js"></script>    
+        <script src="https://unpkg.com/ngraph.fromjson@1.0.0/dist/ngraph.fromjson.min.js"></script>
+        <script src="https://unpkg.com/ngraph.yifanhulayout@0.1.1/dist/ngraph.yifanhulayout.min.js"></script>    
         <script>
             console.log('Data: {json_data}');
             console.log('Show Actions: {show_actions}');
