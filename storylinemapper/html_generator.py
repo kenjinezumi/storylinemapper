@@ -41,13 +41,13 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
               "effective_size": metrics["effective_size"].get(node, 0)} for node, data in G.nodes(data=True)]
     links = [{"source": u, "target": v, "actions": data["actions"]} for u, v, data in G.edges(data=True)]
     
-    data = {
+    data_nodes = {
         "nodes": nodes,
         "links": links,
         "community_names": community_names
     }
 
-    json_data = json.dumps(data)
+    json_data = json.dumps(data_nodes)
     css_content = load_css(style)
 
     if design_options:
@@ -102,7 +102,6 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     <script>
         console.log('Data: {json_data}');
         console.log('Show Actions: {show_actions}');
-        {js_content}
     </script>
 </div>
 
