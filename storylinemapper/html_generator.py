@@ -125,7 +125,7 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
             padding: 0;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100%;
         }}
         .top-bar {{
             display: flex;
@@ -174,6 +174,7 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
             width: 100%;
             height: 100%;
         }}
+    
     </style>
 </head>
 <body>

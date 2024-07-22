@@ -27,7 +27,7 @@ const svg = d3.select(".main-content")
     .append("svg")
     .attr("width", "100%")
     .attr("height", "100%")
-    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("viewBox", '0 0 ' + width + ' ' + height)
     .attr("preserveAspectRatio", "xMidYMid meet");
 
 console.log("SVG element created");
