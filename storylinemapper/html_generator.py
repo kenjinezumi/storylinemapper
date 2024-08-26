@@ -65,7 +65,17 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     <select id="layout-select">
         <option value="d3">D3 Force</option>
         <option value="forceatlas2">ForceAtlas2</option>
+        <option value="yifanhulayout">Yifan Hu</option>
+        <option value="fruchtermanreingold">Fruchterman-Reingold</option>
+        <option value="openord">OpenOrd</option>
+        <option value="noack">Noack's LinLog</option>
+        <option value="grid">Grid Layout</option>
+        <option value="random">Random Layout</option>
+        <option value="sugiyama">Sugiyama Layout</option>
+        <option value="circular">Circular</option>
     </select>
+
+
     <label for="color-set">Choose a color set:</label>
     <select id="color-set">
         <option value="0">Color Set 1</option>
@@ -80,6 +90,37 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         <option value="9">Color Set 10</option>
     </select>
     <br>
+    <label for="node-shape-select">Node Shape:</label>
+<select id="node-shape-select">
+    <option value="circle">Circle</option>
+    <option value="square">Square</option>
+    <option value="triangle">Triangle</option>
+</select>
+
+<label for="node-size-select">Node Size Based On:</label>
+<select id="node-size-select">
+    <option value="fixed">Fixed</option>
+    <option value="degree">Degree</option>
+    <option value="importance">Importance</option>
+    <option value="centrality">Centrality</option>
+</select>
+
+<label for="node-label-select">Node Labels:</label>
+<select id="node-label-select">
+    <option value="all">All</option>
+    <option value="key">Key Nodes Only</option>
+    <option value="zoom">Show on Zoom</option>
+    <option value="none">None</option>
+</select>
+
+<label for="edge-style-select">Edge Style:</label>
+<select id="edge-style-select">
+    <option value="solid">Solid</option>
+    <option value="dashed">Dashed</option>
+    <option value="dotted">Dotted</option>
+    <option value="curved">Curved</option>
+    <option value="straight">Straight</option>
+</select>
     <label for="node-size-slider">Node Size</label>
     <input type="range" id="node-size-slider" min="1" max="20" value="10">
     <br>
@@ -185,8 +226,18 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
         <script src="https://unpkg.com/ngraph.graph@1.0.0/dist/ngraph.graph.min.js"></script>
-        <script src="https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js"></script>        
-        <script>
+        <script src="https://unpkg.com/ngraph.forcelayout@1.1.0/dist/ngraph.forcelayout.min.js"></script>
+        <script src="https://unpkg.com/ngraph.fromjson@1.0.0/dist/ngraph.fromjson.min.js"></script>
+        <script src="https://unpkg.com/ngraph.yifanhulayout@0.1.1/dist/ngraph.yifanhulayout.min.js"></script>
+        <script src="https://unpkg.com/ngraph.openord@0.0.2/dist/ngraph.openord.min.js"></script>
+        <script src="https://unpkg.com/ngraph.noack@1.1.0/dist/ngraph.noack.min.js"></script>
+        <script src="https://unpkg.com/ngraph.kamada@0.0.1/dist/ngraph.kamada.min.js"></script>
+        <script src="https://unpkg.com/ngraph.gridlayout@1.1.0/dist/ngraph.gridlayout.min.js"></script>
+        <script src="https://unpkg.com/ngraph.randomlayout@0.0.2/dist/ngraph.randomlayout.min.js"></script>
+        <script src="https://unpkg.com/ngraph.isomap@0.1.0/dist/ngraph.isomap.min.js"></script>
+        <script src="https://unpkg.com/ngraph.mds@1.1.0/dist/ngraph.mds.min.js"></script>
+        <script src="https://unpkg.com/ngraph.sugiyama@0.0.3/dist/ngraph.sugiyama.min.js"></script>
+         <script type="module">
             console.log('Data: {json_data}');
             console.log('Show Actions: {show_actions}');
             {js_content}

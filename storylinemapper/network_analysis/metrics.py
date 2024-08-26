@@ -2,14 +2,27 @@
 
 import networkx as nx
 from . import path, centrality, structural_hole, subgraph, anomaly
+from networkx.algorithms import clique, core, components
 
 def calculate_all_metrics(G):
     metrics = {}
 
     # Path analysis
     metrics['shortest_paths'] = dict(path.all_pairs_shortest_path(G))
-    metrics['average_shortest_path_length'] = path.average_shortest_path_length(G)
-    metrics['diameter'] = path.diameter(G)
+    if nx.is_connected(G):
+        metrics['average_shortest_path_length'] = path.average_shortest_path_length(G)
+        metrics['diameter'] = path.diameter(G)
+    else:
+        # Handle disconnected graphs by calculating metrics for each connected component
+        components_list = list(components.connected_components(G))
+        avg_path_lengths = []
+        diameters = []
+        for component in components_list:  # Use components_list here
+            subgraph = G.subgraph(component)
+            avg_path_lengths.append(nx.average_shortest_path_length(subgraph))
+            diameters.append(nx.diameter(subgraph))
+        metrics['average_shortest_path_length'] = sum(avg_path_lengths) / len(avg_path_lengths)
+        metrics['diameter'] = max(diameters)
 
     # Centrality
     metrics['degree_centrality'] = centrality.degree_centrality(G)
@@ -23,9 +36,9 @@ def calculate_all_metrics(G):
     metrics['effective_size'] = structural_hole.structural_holes(G)
 
     # Subgraphs
-    metrics['cliques'] = [list(clique) for clique in subgraph.find_cliques(G)]
-    metrics['k_cores'] = list(subgraph.k_core(G, k=3).nodes())
-    metrics['connected_components'] = [list(component) for component in subgraph.connected_components(G)]
+    metrics['cliques'] = [list(clique) for clique in clique.find_cliques(G)]
+    metrics['k_cores'] = list(core.k_core(G, k=3).nodes())
+    metrics['connected_components'] = [list(c) for c in components_list]
 
     # Anomaly detection
     metrics['degree_anomaly'] = anomaly.degree_anomaly(G)
