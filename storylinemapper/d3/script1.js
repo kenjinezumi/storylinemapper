@@ -1,3 +1,4 @@
+
 const data = {json_data};
 const showActions = {show_actions};
 const width = window.innerWidth;
@@ -683,98 +684,37 @@ function ensureNgraphLibraries(callback) {
     loadNext();
 }
 
-// Function to apply layout
-function applyNgraphLayout(layoutType) {
-    ensureNgraphLibraries(function () {
-        const graph = ngraph.graph();
-
-        data.nodes.forEach(node => graph.addNode(node.id));
-        data.links.forEach(link => graph.addLink(link.source, link.target));
-
-        let layout;
-
-        switch (layoutType) {
-            case "forceatlas2":
-                layout = ngraph.forcelayout(graph, { iterationsPerRender: 1 });
-                break;
-            case "yifanhulayout":
-                layout = ngraph.yifanhulayout(graph);
-                break;
-            case "fruchtermanreingold":
-                layout = ngraph.forcelayout(graph);
-                break;
-            case "openord":
-                layout = ngraph.openord(graph);
-                break;
-            case "noack":
-                layout = ngraph.noack(graph);
-                break;
-            case "kamada":
-                layout = ngraph.kamada(graph);
-                break;
-            case "grid":
-                layout = ngraph.gridlayout(graph);
-                break;
-            case "random":
-                layout = ngraph.randomlayout(graph);
-                break;
-            case "isomap":
-                layout = ngraph.isomap(graph);
-                break;
-            case "mds":
-                layout = ngraph.mds(graph);
-                break;
-            case "sugiyama":
-                layout = ngraph.sugiyama(graph);
-                break;
-        }
-
-        function runLayout() {
-            for (let i = 0; i < 10; i++) layout.step();
-            data.nodes.forEach(node => {
-                const pos = layout.getNodePosition(node.id);
-                node.x = pos.x;
-                node.y = pos.y;
-            });
-            ticked();
-            if (layout.isStable()) {
-                cancelAnimationFrame(runLayout);
-            } else {
-                requestAnimationFrame(runLayout);
-            }
-        }
-
-        runLayout();
+function runLayout(layout) {
+    for (let i = 0; i < 10; i++) layout.step();
+    data.nodes.forEach(node => {
+        const pos = layout.getNodePosition(node.id);
+        node.x = pos.x;
+        node.y = pos.y;
     });
+    ticked();
+    if (layout.isStable()) {
+        cancelAnimationFrame(runLayout);
+    } else {
+        requestAnimationFrame(() => runLayout(layout));
+    }
 }
 
 // Function to apply Circular layout
 function applyCircularLayout() {
-    const radius = Math.min(width, height) / 2 - 50;
-    const angleStep = (2 * Math.PI) / data.nodes.length;
+    const radius = Math.min(width, height) / 2 - 50; // Determine radius based on available space
+    const center = { x: width / 2, y: height / 2 };  // Center of the circle
+    const angleStep = (2 * Math.PI) / data.nodes.length; // Angle between each node
 
+    // Position each node on the circumference of the circle
     data.nodes.forEach((node, index) => {
-        node.x = width / 2 + radius * Math.cos(index * angleStep);
-        node.y = height / 2 + radius * Math.sin(index * angleStep);
+        const angle = index * angleStep;  // Calculate the angle for this node
+        node.x = center.x + radius * Math.cos(angle);  // X position
+        node.y = center.y + radius * Math.sin(angle);  // Y position
     });
 
-    ticked();
+    ticked(); // Update the visualization with new positions
 }
 
-// Function to apply Radial Axis layout
-function applyRadialAxisLayout() {
-    const radius = Math.min(width, height) / 2 - 50;
-    const angleStep = (2 * Math.PI) / data.nodes.length;
-    const center = { x: width / 2, y: height / 2 };
-
-    data.nodes.forEach((node, index) => {
-        const angle = index * angleStep;
-        node.x = center.x + radius * Math.cos(angle);
-        node.y = center.y + radius * Math.sin(angle);
-    });
-
-    ticked();
-}
 
 // Function to apply D3 force layout
 function applyD3ForceLayout() {
@@ -787,19 +727,652 @@ function applyD3ForceLayout() {
         .restart();
 }
 
+function applyForceAtlas2Layout() {
+    const iterations = 1000;  // Number of iterations to run the simulation
+    const repulsionStrength = -50; // Repulsion force between nodes
+    const attractionStrength = 0.1; // Attraction force for edges
+    const gravityStrength = 0.1; // Gravity force to center the graph
+    const maxDisplacement = 10; // Maximum displacement per iteration to prevent instability
+    const coolingFactor = 0.95; // Factor to reduce movement over time for convergence
+
+    // Initialize positions and velocities randomly if not already defined
+    data.nodes.forEach(node => {
+        if (node.x === undefined || node.y === undefined) {
+            node.x = Math.random() * width;
+            node.y = Math.random() * height;
+        }
+        node.vx = 0;
+        node.vy = 0;
+    });
+
+    // Function to compute forces and update positions
+    function applyForces() {
+        // Reset velocities
+        data.nodes.forEach(node => {
+            node.vx = 0;
+            node.vy = 0;
+        });
+
+        // Repulsion force (nodes repel each other)
+        for (let i = 0; i < data.nodes.length; i++) {
+            for (let j = i + 1; j < data.nodes.length; j++) {
+                const nodeA = data.nodes[i];
+                const nodeB = data.nodes[j];
+                
+                if (!nodeA || !nodeB) continue; // Skip if either node is undefined
+                
+                const dx = nodeB.x - nodeA.x;
+                const dy = nodeB.y - nodeA.y;
+                const distance = Math.sqrt(dx * dx + dy * dy) || 0.01; // Avoid division by zero
+                const force = repulsionStrength / (distance * distance);
+
+                nodeA.vx -= force * dx / distance;
+                nodeA.vy -= force * dy / distance;
+                nodeB.vx += force * dx / distance;
+                nodeB.vy += force * dy / distance;
+            }
+        }
+
+        // Attraction force (edges attract connected nodes)
+        data.links.forEach(link => {
+            const source = data.nodes.find(n => n.id === link.source);
+            const target = data.nodes.find(n => n.id === link.target);
+
+            if (!source || !target) return; // Skip if either source or target is undefined
+
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
+            const distance = Math.sqrt(dx * dx + dy * dy) || 0.01; // Avoid division by zero
+            const force = attractionStrength * distance;
+
+            source.vx += force * dx / distance;
+            source.vy += force * dy / distance;
+            target.vx -= force * dx / distance;
+            target.vy -= force * dy / distance;
+        });
+
+        // Gravity force (attracts nodes to the center)
+        data.nodes.forEach(node => {
+            if (!node) return; // Skip if node is undefined
+            
+            const dx = node.x - width / 2;
+            const dy = node.y - height / 2;
+            const distance = Math.sqrt(dx * dx + dy * dy) || 0.01; // Avoid division by zero
+            const force = gravityStrength * distance;
+
+            node.vx -= force * dx / distance;
+            node.vy -= force * dy / distance;
+        });
+
+        // Update positions with velocities and apply cooling
+        data.nodes.forEach(node => {
+            if (!node) return; // Skip if node is undefined
+            
+            node.vx *= coolingFactor;
+            node.vy *= coolingFactor;
+
+            // Limit the movement to prevent instability
+            const vx = Math.max(-maxDisplacement, Math.min(maxDisplacement, node.vx));
+            const vy = Math.max(-maxDisplacement, Math.min(maxDisplacement, node.vy));
+
+            node.x += vx;
+            node.y += vy;
+        });
+    }
+
+    // Function to run the layout
+    function runLayout(iteration) {
+        if (iteration >= iterations) return;  // Stop after the set number of iterations
+        applyForces();
+        ticked();  // Update the positions of nodes and links on the SVG
+        requestAnimationFrame(() => runLayout(iteration + 1));  // Continue to the next frame
+    }
+
+    runLayout(0);  // Start the layout process
+}
+
+
+// Function to apply Yifan Hu layout
+// Function to apply a basic Yifan Hu layout without third-party libraries
+function applyYifanHuLayout() {
+    const maxIterations = 500; // Maximum number of iterations
+    const k = Math.sqrt((width * height) / data.nodes.length); // Optimal distance between nodes
+    const initialTemperature = width / 10; // Initial temperature for cooling
+    let temperature = initialTemperature;
+
+    // Initialize node positions randomly if not already initialized
+    data.nodes.forEach(node => {
+        node.x = node.x || Math.random() * width;
+        node.y = node.y || Math.random() * height;
+        node.vx = 0;
+        node.vy = 0;
+    });
+
+    // Function to apply forces (attractive and repulsive) and update positions
+    function applyForces() {
+        // Reset forces
+        data.nodes.forEach(node => {
+            node.vx = 0;
+            node.vy = 0;
+        });
+
+        // Apply repulsive forces (similar to an inverted Coulomb's law)
+        for (let i = 0; i < data.nodes.length; i++) {
+            for (let j = i + 1; j < data.nodes.length; j++) {
+                const nodeA = data.nodes[i];
+                const nodeB = data.nodes[j];
+                const dx = nodeB.x - nodeA.x;
+                const dy = nodeB.y - nodeA.y;
+                const distance = Math.sqrt(dx * dx + dy * dy) || 1; // Prevent division by zero
+                const repulsiveForce = (k * k) / distance;
+
+                // Update velocities based on the repulsive force
+                const fx = (repulsiveForce * dx) / distance;
+                const fy = (repulsiveForce * dy) / distance;
+                nodeA.vx -= fx;
+                nodeA.vy -= fy;
+                nodeB.vx += fx;
+                nodeB.vy += fy;
+            }
+        }
+
+        // Apply attractive forces (similar to Hooke's law for springs)
+        data.links.forEach(link => {
+            const source = data.nodes.find(n => n.id === link.source);
+            const target = data.nodes.find(n => n.id === link.target);
+            if (!source || !target) return;
+
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
+            const distance = Math.sqrt(dx * dx + dy * dy) || 1; // Prevent division by zero
+            const attractiveForce = (distance * distance) / k;
+
+            // Update velocities based on the attractive force
+            const fx = (attractiveForce * dx) / distance;
+            const fy = (attractiveForce * dy) / distance;
+            source.vx += fx;
+            source.vy += fy;
+            target.vx -= fx;
+            target.vy -= fy;
+        });
+
+        // Apply movement and cooling
+        data.nodes.forEach(node => {
+            // Update position with some friction
+            node.x += node.vx * temperature;
+            node.y += node.vy * temperature;
+
+            // Keep nodes within the bounds
+            node.x = Math.max(0, Math.min(width, node.x));
+            node.y = Math.max(0, Math.min(height, node.y));
+        });
+
+        // Reduce temperature to simulate cooling
+        temperature *= 0.95;
+    }
+
+    // Run the layout for a set number of iterations
+    function runLayout(iteration) {
+        if (iteration >= maxIterations || temperature < 1e-4) return; // Stop if max iterations or very low temperature
+        applyForces();
+        ticked(); // Update the visualization on each tick
+        requestAnimationFrame(() => runLayout(iteration + 1));
+    }
+
+    runLayout(0); // Start the layout process
+}
+
+
+// Function to apply Fruchterman-Reingold layout
+function applyFruchtermanReingoldLayout() {
+    const maxIterations = 500;  // Maximum number of iterations
+    const area = width * height; // Total area of the canvas
+    const k = Math.sqrt(area / data.nodes.length); // Optimal distance between nodes
+    let temperature = width / 10; // Initial temperature for cooling
+
+    // Initialize node positions randomly if not already set
+    data.nodes.forEach(node => {
+        node.x = node.x || Math.random() * width;
+        node.y = node.y || Math.random() * height;
+        node.vx = 0;
+        node.vy = 0;
+    });
+
+    // Function to apply forces (attractive and repulsive) and update positions
+    function applyForces() {
+        // Reset forces
+        data.nodes.forEach(node => {
+            node.vx = 0;
+            node.vy = 0;
+        });
+
+        // Apply repulsive forces between every pair of nodes
+        for (let i = 0; i < data.nodes.length; i++) {
+            for (let j = i + 1; j < data.nodes.length; j++) {
+                const nodeA = data.nodes[i];
+                const nodeB = data.nodes[j];
+                const dx = nodeB.x - nodeA.x;
+                const dy = nodeB.y - nodeA.y;
+                const distance = Math.sqrt(dx * dx + dy * dy) || 0.01; // Prevent division by zero
+                const repulsiveForce = (k * k) / distance;
+
+                // Update velocities based on the repulsive force
+                const fx = (repulsiveForce * dx) / distance;
+                const fy = (repulsiveForce * dy) / distance;
+                nodeA.vx -= fx;
+                nodeA.vy -= fy;
+                nodeB.vx += fx;
+                nodeB.vy += fy;
+            }
+        }
+
+        // Apply attractive forces between connected nodes
+        data.links.forEach(link => {
+            const source = data.nodes.find(n => n.id === link.source);
+            const target = data.nodes.find(n => n.id === link.target);
+            if (!source || !target) return;
+
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
+            const distance = Math.sqrt(dx * dx + dy * dy) || 0.01; // Prevent division by zero
+            const attractiveForce = (distance * distance) / k;
+
+            // Update velocities based on the attractive force
+            const fx = (attractiveForce * dx) / distance;
+            const fy = (attractiveForce * dy) / distance;
+            source.vx += fx;
+            source.vy += fy;
+            target.vx -= fx;
+            target.vy -= fy;
+        });
+
+        // Update positions based on velocities and apply cooling
+        data.nodes.forEach(node => {
+            node.x += Math.max(-temperature, Math.min(temperature, node.vx));
+            node.y += Math.max(-temperature, Math.min(temperature, node.vy));
+
+            // Keep nodes within the bounds of the canvas
+            node.x = Math.max(0, Math.min(width, node.x));
+            node.y = Math.max(0, Math.min(height, node.y));
+        });
+
+        // Reduce temperature to simulate cooling
+        temperature *= 0.95;
+    }
+
+    // Run the layout for a set number of iterations
+    function runLayout(iteration) {
+        if (iteration >= maxIterations || temperature < 1e-4) return; // Stop if max iterations reached or temperature is low
+        applyForces();
+        ticked(); // Update the visualization on each tick
+        requestAnimationFrame(() => runLayout(iteration + 1));
+    }
+
+    runLayout(0); // Start the layout process
+}
+
+
+
+// Function to apply Noack layout
+function applyNoackLayout() {
+    const maxIterations = 500; // Maximum number of iterations
+    const area = width * height; // Total area of the canvas
+    const k = Math.sqrt(area / data.nodes.length); // Optimal distance between nodes
+    let temperature = width / 10; // Initial temperature for cooling
+
+    // Initialize node positions randomly if not already set
+    data.nodes.forEach(node => {
+        node.x = node.x || Math.random() * width;
+        node.y = node.y || Math.random() * height;
+        node.vx = 0;
+        node.vy = 0;
+    });
+
+    // Function to apply forces (attractive and repulsive) and update positions
+    function applyForces() {
+        // Reset forces
+        data.nodes.forEach(node => {
+            node.vx = 0;
+            node.vy = 0;
+        });
+
+        // Apply repulsive forces between every pair of nodes using LinLog model
+        for (let i = 0; i < data.nodes.length; i++) {
+            for (let j = i + 1; j < data.nodes.length; j++) {
+                const nodeA = data.nodes[i];
+                const nodeB = data.nodes[j];
+                const dx = nodeB.x - nodeA.x;
+                const dy = nodeB.y - nodeA.y;
+                const distance = Math.sqrt(dx * dx + dy * dy) || 0.01; // Prevent division by zero
+                const repulsiveForce = k * k / distance; // Inverse of the distance
+
+                // Update velocities based on the repulsive force
+                const fx = (repulsiveForce * dx) / distance;
+                const fy = (repulsiveForce * dy) / distance;
+                nodeA.vx -= fx;
+                nodeA.vy -= fy;
+                nodeB.vx += fx;
+                nodeB.vy += fy;
+            }
+        }
+
+        // Apply attractive forces between connected nodes using LinLog model
+        data.links.forEach(link => {
+            const source = data.nodes.find(n => n.id === link.source);
+            const target = data.nodes.find(n => n.id === link.target);
+            if (!source || !target) return;
+
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
+            const distance = Math.sqrt(dx * dx + dy * dy) || 0.01; // Prevent division by zero
+            const attractiveForce = Math.log(distance / k + 1); // Logarithmic distance
+
+            // Update velocities based on the attractive force
+            const fx = (attractiveForce * dx) / distance;
+            const fy = (attractiveForce * dy) / distance;
+            source.vx += fx;
+            source.vy += fy;
+            target.vx -= fx;
+            target.vy -= fy;
+        });
+
+        // Update positions based on velocities and apply cooling
+        data.nodes.forEach(node => {
+            node.x += Math.max(-temperature, Math.min(temperature, node.vx));
+            node.y += Math.max(-temperature, Math.min(temperature, node.vy));
+
+            // Keep nodes within the bounds of the canvas
+            node.x = Math.max(0, Math.min(width, node.x));
+            node.y = Math.max(0, Math.min(height, node.y));
+        });
+
+        // Reduce temperature to simulate cooling
+        temperature *= 0.95;
+    }
+
+    // Run the layout for a set number of iterations
+    function runLayout(iteration) {
+        if (iteration >= maxIterations || temperature < 1e-4) return; // Stop if max iterations reached or temperature is low
+        applyForces();
+        ticked(); // Update the visualization on each tick
+        requestAnimationFrame(() => runLayout(iteration + 1));
+    }
+
+    runLayout(0); // Start the layout process
+}
+
+
+// Function to apply a basic Grid layout without third-party libraries
+function applyGridLayout() {
+    const padding = 20; // Padding between nodes
+    const gridWidth = Math.ceil(Math.sqrt(data.nodes.length)); // Determine grid width
+    const gridHeight = Math.ceil(data.nodes.length / gridWidth); // Determine grid height
+
+    const nodeSize = 40; // Approximate size of each node to determine spacing
+
+    // Determine the actual width and height available for the grid layout
+    const availableWidth = width - padding * 2;
+    const availableHeight = height - padding * 2;
+
+    // Determine cell size based on available space and number of rows/columns
+    const cellWidth = Math.floor(availableWidth / gridWidth);
+    const cellHeight = Math.floor(availableHeight / gridHeight);
+
+    // Function to calculate x, y positions for each node
+    function calculateGridPositions() {
+        data.nodes.forEach((node, index) => {
+            // Calculate grid row and column for each node
+            const col = index % gridWidth;
+            const row = Math.floor(index / gridWidth);
+
+            // Assign x and y positions based on the grid cell
+            node.x = padding + col * cellWidth + cellWidth / 2; // Center the node within the cell
+            node.y = padding + row * cellHeight + cellHeight / 2; // Center the node within the cell
+        });
+    }
+
+    calculateGridPositions();
+    ticked(); // Update the visualization with new positions
+}
+
+
+
+
+// Function to apply Random layout
+function applyRandomLayout() {
+    const padding = 20; // Padding to keep nodes away from the edges
+
+    // Function to calculate random positions for each node
+    function assignRandomPositions() {
+        data.nodes.forEach(node => {
+            // Assign random x and y positions within the canvas size, accounting for padding
+            node.x = Math.random() * (width - 2 * padding) + padding;
+            node.y = Math.random() * (height - 2 * padding) + padding;
+        });
+    }
+
+    assignRandomPositions();
+    ticked(); // Update the visualization with new positions
+}
+
+
+// Function to apply Sugiyama layout
+function applySugiyamaLayout() {
+    // Helper function to initialize node levels and positions
+    function initializeNodeLevels(nodes, links) {
+        const levels = {};
+        const inDegree = {};
+        nodes.forEach(node => {
+            levels[node.id] = 0;
+            inDegree[node.id] = 0;
+        });
+
+        // Compute in-degrees for all nodes
+        links.forEach(link => {
+            inDegree[link.target]++;
+        });
+
+        // Queue for processing nodes
+        const queue = nodes.filter(node => inDegree[node.id] === 0);
+
+        while (queue.length > 0) {
+            const node = queue.shift();
+            links.forEach(link => {
+                if (link.source === node.id) {
+                    levels[link.target] = Math.max(levels[link.target], levels[node.id] + 1);
+                    inDegree[link.target]--;
+                    if (inDegree[link.target] === 0) {
+                        queue.push(nodes.find(n => n.id === link.target));
+                    }
+                }
+            });
+        }
+
+        return levels;
+    }
+
+    // Helper function to assign x and y positions based on levels and optimize positions to reduce crossings
+    function assignPositions(levels) {
+        const nodesByLevel = {};
+        Object.keys(levels).forEach(nodeId => {
+            const level = levels[nodeId];
+            if (!nodesByLevel[level]) {
+                nodesByLevel[level] = [];
+            }
+            nodesByLevel[level].push(nodeId);
+        });
+
+        const levelKeys = Object.keys(nodesByLevel).map(Number).sort((a, b) => a - b);
+
+        levelKeys.forEach((level, index) => {
+            const nodes = nodesByLevel[level];
+            const y = (height / (levelKeys.length + 1)) * (index + 1);
+            nodes.forEach((nodeId, i) => {
+                const node = data.nodes.find(n => n.id === nodeId);
+                node.y = y;
+                node.x = (width / (nodes.length + 1)) * (i + 1);
+            });
+        });
+
+        // Minimize edge crossings with heuristic ordering
+        for (let iter = 0; iter < 5; iter++) {  // Repeat the optimization a few times
+            levelKeys.forEach(level => {
+                if (level > 0) {
+                    const previousLevel = nodesByLevel[level - 1];
+                    const currentLevel = nodesByLevel[level];
+
+                    currentLevel.sort((a, b) => {
+                        const aNode = data.nodes.find(n => n.id === a);
+                        const bNode = data.nodes.find(n => n.id === b);
+
+                        const aY = previousLevel
+                            .map(p => data.links.some(link => (link.source === p && link.target === a)) ? data.nodes.find(n => n.id === p).y : 0)
+                            .reduce((sum, y) => sum + y, 0);
+                        const bY = previousLevel
+                            .map(p => data.links.some(link => (link.source === p && link.target === b)) ? data.nodes.find(n => n.id === p).y : 0)
+                            .reduce((sum, y) => sum + y, 0);
+
+                        return aY - bY;
+                    });
+
+                    currentLevel.forEach((nodeId, i) => {
+                        const node = data.nodes.find(n => n.id === nodeId);
+                        node.x = (width / (currentLevel.length + 1)) * (i + 1);
+                    });
+                }
+            });
+        }
+    }
+
+    // Initialize node levels and assign positions
+    const levels = initializeNodeLevels(data.nodes, data.links);
+    assignPositions(levels);
+
+    ticked(); // Update the visualization with new positions
+}
+
+// Ensure numeric.js is loaded for matrix computations, if needed
+function ensureNumericJs(callback) {
+    if (typeof numeric === 'undefined') {
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/numeric/1.2.6/numeric.min.js', callback);
+    } else {
+        callback();
+    }
+}
+
+
+
 // Function to update layout
 function updateLayout() {
     const layout = document.getElementById("layout-select").value;
-    if (layout === "forceatlas2" || layout === "yifanhulayout" || layout === "fruchtermanreingold" || layout === "openord" || layout === "noack" || layout === "kamada" || layout === "grid" || layout === "random" || layout === "isomap" || layout === "mds" || layout === "sugiyama") {
-        applyNgraphLayout(layout);
+    if (layout === "forceatlas2") {
+        applyForceAtlas2Layout();
+    } else if (layout === "yifanhulayout") {
+        applyYifanHuLayout();
+    } else if (layout === "fruchtermanreingold") {
+        applyFruchtermanReingoldLayout();
+    } else if (layout === "openord") {
+        applyManualOpenOrdLayout(data, width, height);
+    } else if (layout === "noack") {
+        applyNoackLayout();
+    } else if (layout === "grid") {
+        applyGridLayout();
+    } else if (layout === "random") {
+        applyRandomLayout();
+    } else if (layout === "sugiyama") {
+        applySugiyamaLayout();
     } else if (layout === "circular") {
         applyCircularLayout();
-    } else if (layout === "radialaxis") {
-        applyRadialAxisLayout();
-    } else {
+    }else {
         applyD3ForceLayout();
     }
 }
+
+//Layouts 
+
+
+function applyManualOpenOrdLayout(data, width, height) {
+    const iterations = 500;
+    const attraction = 0.1;
+    const repulsion = 1.0;
+    const gravity = 0.1;
+    const coolingFactor = 0.9;
+    
+    // Initialize positions randomly
+    data.nodes.forEach(node => {
+        node.x = node.x || Math.random() * width;
+        node.y = node.y || Math.random() * height;
+    });
+
+    function applyForces() {
+        // Reset forces
+        data.nodes.forEach(node => {
+            node.vx = 0;
+            node.vy = 0;
+        });
+
+        // Attraction force
+        data.links.forEach(link => {
+            const source = data.nodes.find(n => n.id === link.source);
+            const target = data.nodes.find(n => n.id === link.target);
+            if (!source || !target) return; // Skip if either node is undefined
+        
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const force = attraction * Math.log(distance);
+        
+            source.vx += force * dx / distance;
+            source.vy += force * dy / distance;
+            target.vx -= force * dx / distance;
+            target.vy -= force * dy / distance;
+        });
+        
+
+        // Repulsion force
+        for (let i = 0; i < data.nodes.length; i++) {
+            const nodeA = data.nodes[i];
+            if (!nodeA) continue; // Skip if nodeA is undefined
+        
+            for (let j = i + 1; j < data.nodes.length; j++) {
+                const nodeB = data.nodes[j];
+                if (!nodeB) continue; // Skip if nodeB is undefined
+        
+                const dx = nodeB.x - nodeA.x;
+                const dy = nodeB.y - nodeA.y;
+                const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+                const force = repulsion / (distance * distance);
+        
+                nodeA.vx -= force * dx / distance;
+                nodeA.vy -= force * dy / distance;
+                nodeB.vx += force * dx / distance;
+                nodeB.vy += force * dy / distance;
+            }
+        }
+        
+
+        // Gravity force
+        data.nodes.forEach(node => {
+            node.vx -= gravity * (node.x - width / 2);
+            node.vy -= gravity * (node.y - height / 2);
+        });
+
+        // Update positions
+        data.nodes.forEach(node => {
+            node.x += node.vx * coolingFactor;
+            node.y += node.vy * coolingFactor;
+        });
+    }
+
+    function runLayout(iteration) {
+        if (iteration >= iterations) return;
+        applyForces();
+        requestAnimationFrame(() => runLayout(iteration + 1));
+    }
+
+    runLayout(0);
+}
+
 
 document.getElementById("layout-select").addEventListener("change", updateLayout);
 

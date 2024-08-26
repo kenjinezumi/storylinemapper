@@ -69,14 +69,10 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         <option value="fruchtermanreingold">Fruchterman-Reingold</option>
         <option value="openord">OpenOrd</option>
         <option value="noack">Noack's LinLog</option>
-        <option value="kamada">Kamada-Kawai</option>
         <option value="grid">Grid Layout</option>
         <option value="random">Random Layout</option>
-        <option value="isomap">Isomap Layout</option>
-        <option value="mds">MDS (Multidimensional Scaling)</option>
         <option value="sugiyama">Sugiyama Layout</option>
         <option value="circular">Circular</option>
-        <option value="radialaxis">Radial Axis</option>
     </select>
 
 
@@ -241,7 +237,7 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         <script src="https://unpkg.com/ngraph.isomap@0.1.0/dist/ngraph.isomap.min.js"></script>
         <script src="https://unpkg.com/ngraph.mds@1.1.0/dist/ngraph.mds.min.js"></script>
         <script src="https://unpkg.com/ngraph.sugiyama@0.0.3/dist/ngraph.sugiyama.min.js"></script>
-        <script>  
+         <script type="module">
             console.log('Data: {json_data}');
             console.log('Show Actions: {show_actions}');
             {js_content}
