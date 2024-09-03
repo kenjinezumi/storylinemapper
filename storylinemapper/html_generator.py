@@ -142,6 +142,10 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     <button id="export-png-btn">Export as PNG</button>
 </div>
 <div id="metrics"></div>
+<div id="loading-indicator" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.75); color: white; padding: 10px; border-radius: 5px; z-index: 1000;">
+    Computing layout, please wait...
+</div>
+
 <div class="main-content">
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>

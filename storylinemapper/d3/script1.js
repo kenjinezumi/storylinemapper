@@ -1,4 +1,5 @@
 
+// JavaScript code starts here
 const data = {json_data};
 const showActions = {show_actions};
 const width = window.innerWidth;
@@ -222,6 +223,28 @@ if (showActions) {
         .attr("text-anchor", "middle")
         .text(d => d.actions);
     console.log("Action labels added");
+}
+
+// Show loading indicator function
+function showLoadingIndicator() {
+    document.getElementById("loading-indicator").style.display = "block";
+}
+
+// Hide loading indicator function
+function hideLoadingIndicator() {
+    document.getElementById("loading-indicator").style.display = "none";
+}
+
+// Modified function to run layout with loading indicator
+function runLayoutWithIndicator(layoutFunction) {
+    showLoadingIndicator(); // Show loading indicator
+
+    // Run the layout function
+    requestAnimationFrame(() => {
+        layoutFunction(() => {
+            hideLoadingIndicator(); // Hide loading indicator when done
+        });
+    });
 }
 
 // Simulation tick
@@ -700,7 +723,7 @@ function runLayout(layout) {
 }
 
 // Function to apply Circular layout
-function applyCircularLayout() {
+function applyCircularLayout(callback) {
     const radius = Math.min(width, height) / 2 - 50; // Determine radius based on available space
     const center = { x: width / 2, y: height / 2 };  // Center of the circle
     const angleStep = (2 * Math.PI) / data.nodes.length; // Angle between each node
@@ -713,11 +736,12 @@ function applyCircularLayout() {
     });
 
     ticked(); // Update the visualization with new positions
+
+    if (callback) callback();
 }
 
-
 // Function to apply D3 force layout
-function applyD3ForceLayout() {
+function applyD3ForceLayout(callback) {
     simulation
         .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
         .force("charge", d3.forceManyBody().strength(-30))
@@ -725,9 +749,11 @@ function applyD3ForceLayout() {
         .on("tick", ticked)
         .alpha(1)
         .restart();
+
+    if (callback) callback();
 }
 
-function applyForceAtlas2Layout() {
+function applyForceAtlas2Layout(callback) {
     const iterations = 1000;  // Number of iterations to run the simulation
     const repulsionStrength = -50; // Repulsion force between nodes
     const attractionStrength = 0.1; // Attraction force for edges
@@ -822,7 +848,10 @@ function applyForceAtlas2Layout() {
 
     // Function to run the layout
     function runLayout(iteration) {
-        if (iteration >= iterations) return;  // Stop after the set number of iterations
+        if (iteration >= iterations) {
+            if (callback) callback();
+            return;  // Stop after the set number of iterations
+        }
         applyForces();
         ticked();  // Update the positions of nodes and links on the SVG
         requestAnimationFrame(() => runLayout(iteration + 1));  // Continue to the next frame
@@ -834,7 +863,7 @@ function applyForceAtlas2Layout() {
 
 // Function to apply Yifan Hu layout
 // Function to apply a basic Yifan Hu layout without third-party libraries
-function applyYifanHuLayout() {
+function applyYifanHuLayout(callback) {
     const maxIterations = 500; // Maximum number of iterations
     const k = Math.sqrt((width * height) / data.nodes.length); // Optimal distance between nodes
     const initialTemperature = width / 10; // Initial temperature for cooling
@@ -913,7 +942,10 @@ function applyYifanHuLayout() {
 
     // Run the layout for a set number of iterations
     function runLayout(iteration) {
-        if (iteration >= maxIterations || temperature < 1e-4) return; // Stop if max iterations or very low temperature
+        if (iteration >= maxIterations || temperature < 1e-4) {
+            if (callback) callback();
+            return; // Stop if max iterations or very low temperature
+        }
         applyForces();
         ticked(); // Update the visualization on each tick
         requestAnimationFrame(() => runLayout(iteration + 1));
@@ -924,7 +956,7 @@ function applyYifanHuLayout() {
 
 
 // Function to apply Fruchterman-Reingold layout
-function applyFruchtermanReingoldLayout() {
+function applyFruchtermanReingoldLayout(callback) {
     const maxIterations = 500;  // Maximum number of iterations
     const area = width * height; // Total area of the canvas
     const k = Math.sqrt(area / data.nodes.length); // Optimal distance between nodes
@@ -1002,7 +1034,10 @@ function applyFruchtermanReingoldLayout() {
 
     // Run the layout for a set number of iterations
     function runLayout(iteration) {
-        if (iteration >= maxIterations || temperature < 1e-4) return; // Stop if max iterations reached or temperature is low
+        if (iteration >= maxIterations || temperature < 1e-4) {
+            if (callback) callback();
+            return; // Stop if max iterations reached or temperature is low
+        }
         applyForces();
         ticked(); // Update the visualization on each tick
         requestAnimationFrame(() => runLayout(iteration + 1));
@@ -1014,7 +1049,7 @@ function applyFruchtermanReingoldLayout() {
 
 
 // Function to apply Noack layout
-function applyNoackLayout() {
+function applyNoackLayout(callback) {
     const maxIterations = 500; // Maximum number of iterations
     const area = width * height; // Total area of the canvas
     const k = Math.sqrt(area / data.nodes.length); // Optimal distance between nodes
@@ -1092,7 +1127,10 @@ function applyNoackLayout() {
 
     // Run the layout for a set number of iterations
     function runLayout(iteration) {
-        if (iteration >= maxIterations || temperature < 1e-4) return; // Stop if max iterations reached or temperature is low
+        if (iteration >= maxIterations || temperature < 1e-4) {
+            if (callback) callback();
+            return; // Stop if max iterations reached or temperature is low
+        }
         applyForces();
         ticked(); // Update the visualization on each tick
         requestAnimationFrame(() => runLayout(iteration + 1));
@@ -1103,7 +1141,7 @@ function applyNoackLayout() {
 
 
 // Function to apply a basic Grid layout without third-party libraries
-function applyGridLayout() {
+function applyGridLayout(callback) {
     const padding = 20; // Padding between nodes
     const gridWidth = Math.ceil(Math.sqrt(data.nodes.length)); // Determine grid width
     const gridHeight = Math.ceil(data.nodes.length / gridWidth); // Determine grid height
@@ -1133,13 +1171,15 @@ function applyGridLayout() {
 
     calculateGridPositions();
     ticked(); // Update the visualization with new positions
+
+    if (callback) callback();
 }
 
 
 
 
 // Function to apply Random layout
-function applyRandomLayout() {
+function applyRandomLayout(callback) {
     const padding = 20; // Padding to keep nodes away from the edges
 
     // Function to calculate random positions for each node
@@ -1153,11 +1193,13 @@ function applyRandomLayout() {
 
     assignRandomPositions();
     ticked(); // Update the visualization with new positions
+
+    if (callback) callback();
 }
 
 
 // Function to apply Sugiyama layout
-function applySugiyamaLayout() {
+function applySugiyamaLayout(callback) {
     // Helper function to initialize node levels and positions
     function initializeNodeLevels(nodes, links) {
         const levels = {};
@@ -1249,6 +1291,8 @@ function applySugiyamaLayout() {
     assignPositions(levels);
 
     ticked(); // Update the visualization with new positions
+
+    if (callback) callback();
 }
 
 // Ensure numeric.js is loaded for matrix computations, if needed
@@ -1266,32 +1310,32 @@ function ensureNumericJs(callback) {
 function updateLayout() {
     const layout = document.getElementById("layout-select").value;
     if (layout === "forceatlas2") {
-        applyForceAtlas2Layout();
+        runLayoutWithIndicator(applyForceAtlas2Layout);
     } else if (layout === "yifanhulayout") {
-        applyYifanHuLayout();
+        runLayoutWithIndicator(applyYifanHuLayout);
     } else if (layout === "fruchtermanreingold") {
-        applyFruchtermanReingoldLayout();
+        runLayoutWithIndicator(applyFruchtermanReingoldLayout);
     } else if (layout === "openord") {
-        applyManualOpenOrdLayout(data, width, height);
+        runLayoutWithIndicator(() => applyManualOpenOrdLayout(data, width, height));
     } else if (layout === "noack") {
-        applyNoackLayout();
+        runLayoutWithIndicator(applyNoackLayout);
     } else if (layout === "grid") {
-        applyGridLayout();
+        runLayoutWithIndicator(applyGridLayout);
     } else if (layout === "random") {
-        applyRandomLayout();
+        runLayoutWithIndicator(applyRandomLayout);
     } else if (layout === "sugiyama") {
-        applySugiyamaLayout();
+        runLayoutWithIndicator(applySugiyamaLayout);
     } else if (layout === "circular") {
-        applyCircularLayout();
-    }else {
-        applyD3ForceLayout();
+        runLayoutWithIndicator(applyCircularLayout);
+    } else {
+        runLayoutWithIndicator(applyD3ForceLayout);
     }
 }
 
 //Layouts 
 
 
-function applyManualOpenOrdLayout(data, width, height) {
+function applyManualOpenOrdLayout(data, width, height, callback) {
     const iterations = 500;
     const attraction = 0.1;
     const repulsion = 1.0;
@@ -1365,7 +1409,10 @@ function applyManualOpenOrdLayout(data, width, height) {
     }
 
     function runLayout(iteration) {
-        if (iteration >= iterations) return;
+        if (iteration >= iterations) {
+            if (callback) callback();
+            return;
+        }
         applyForces();
         requestAnimationFrame(() => runLayout(iteration + 1));
     }
@@ -1377,4 +1424,4 @@ function applyManualOpenOrdLayout(data, width, height) {
 document.getElementById("layout-select").addEventListener("change", updateLayout);
 
 // Default initialization with D3 force layout
-applyD3ForceLayout();
+runLayoutWithIndicator(applyD3ForceLayout);

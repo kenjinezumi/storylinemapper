@@ -6,3 +6,5 @@ numpy>=1.15.0
 scikit-learn>=1.2,<2.0
 python-louvain>=0.16
 infomap>=1.5.0,<2.0
+community
+infomap
