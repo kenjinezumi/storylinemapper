@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="storylinemapper",
-    version="0.3.1",
+    version="0.3.2",
     description="A library to generate networks of characters and timelines based on text",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
