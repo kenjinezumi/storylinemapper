@@ -42,8 +42,6 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
     links = [{"source": u, "target": v, "actions": data["actions"]} for u, v, data in G.edges(data=True)]
     degree_anomalies = metrics["degree_anomaly"]
     k_cores = metrics["k_cores"]
-    cliques = metrics["cliques"] 
-    bridges = metrics["bridges"]
     shortest_paths = metrics['shortest_paths']
 
     data_nodes = {
@@ -52,8 +50,6 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
         "community_names": community_names,
         "degree_anomalies": degree_anomalies,
         "k_cores": k_cores,
-        "cliques": cliques,
-        "bridges": bridges, 
         "shortest_paths": shortest_paths
     }
 
@@ -139,8 +135,7 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
 </div>
 <div class="option-panel" id="analysis-options">
     <h4>Analysis</h4>
-    <button id="anomaly-detection-btn">Anomaly Detection</button>
-    <button id="show-cliques-btn">Show Cliques</button>
+    <button id="anomaly-detection-btn">Highlight outliers</button>
     <button id="highlight-k-core-btn">Highlight K-cores</button>
     <input type="text" id="source-node" placeholder="Source Node">
     <input type="text" id="target-node" placeholder="Target Node">

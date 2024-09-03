@@ -506,7 +506,6 @@ document.getElementById("export-btn").addEventListener("click", function() {
 });
 document.getElementById("highlight-path-btn").addEventListener("click", highlightShortestPath);
 document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCores);
-document.getElementById("show-cliques-btn").addEventListener("click", showCliques);
 
 document.getElementById("color-set").addEventListener("change", updateColors);
 document.getElementById("node-size-slider").addEventListener("input", updateDesign);
@@ -639,19 +638,34 @@ function hideTooltip() {
 
 // Highlight K-cores function
 function highlightKCores() {
+    console.log('Before set kCores:', data.k_cores);
+    console.log('Checking all data', data);
     const kCores = new Set(data.k_cores); // Convert array to Set for faster lookup
+    console.log('K-cores:', kCores);
     resetHighlighting(); // Reset the graph before highlighting
 
-    // Apply styles to k-core nodes
-    node.style("opacity", n => kCores.has(n.id) ? 1 : 0.1)
-        .attr("stroke", n => kCores.has(n.id) ? "blue" : null)
-        .attr("stroke-width", n => kCores.has(n.id) ? 2 : null);
-    
-    link.style("opacity", l => kCores.has(l.source.id) && kCores.has(l.target.id) ? 1 : 0.1);
-    label.style("opacity", n => kCores.has(n.id) ? 1 : 0.1);
-    
+    // Apply styles to k-core nodes and grey out non-k-core nodes
+    node.style("opacity", n => kCores.has(n.id) ? 1 : 0.2)  // Slightly faded for non-k-core nodes
+        .style("stroke", n => kCores.has(n.id) ? "blue" : "#cccccc")  // Grey stroke for non-k-core nodes
+        .style("stroke-width", n => kCores.has(n.id) ? 2 : 1)  // Thinner stroke for non-k-core nodes
+        .style("fill", n => kCores.has(n.id) ? color(n.community) : "#cccccc")  // Grey fill for non-k-core nodes
+        .attr("d", d3.symbol().type(d3.symbolCircle).size(n => kCores.has(n.id) ? 64 : 64)); // Reset node shape
+
+    // Update link styles: grey out if either end is not in k-core
+    link.style("opacity", l => (kCores.has(l.source.id) && kCores.has(l.target.id)) ? 1 : 0.2)
+        .style("stroke", l => (kCores.has(l.source.id) && kCores.has(l.target.id)) ? "#ccc" : "#e0e0e0"); // Lighter grey for non-k-core links
+
+    // Update label styles: grey out non-k-core node labels
+    label.style("opacity", n => kCores.has(n.id) ? 1 : 0.2)  // Grey labels for non-k-core nodes
+        .style("fill", n => kCores.has(n.id) ? "#000" : "#cccccc");  // Grey text for non-k-core nodes
+
     console.log("K-cores highlighted");
 }
+
+
+// Add event listener for the "Show K-Cores" button
+document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCores);
+
 
 function highlightAnomalies() {
     console.log('Before set anomalies:', data.degree_anomalies);
@@ -684,23 +698,48 @@ console.log("Anomaly detection event listener added");
 
 // Show Cliques function
 function showCliques() {
-    const cliques = data.cliques;
+    const cliques = data.cliques; // Assumes cliques are an array of arrays with node IDs
     resetHighlighting(); // Reset the graph before highlighting
-    node.style("opacity", 0.1);
-    link.style("opacity", 0.1);
-    label.style("opacity", 0.1);
+
+    // Grey out all nodes, links, and labels initially
+    node.style("opacity", 0.1)
+        .attr("stroke", "#cccccc")
+        .attr("stroke-width", 1)
+        .attr("fill", "#cccccc");
+
+    link.style("opacity", 0.1)
+        .style("stroke", "#e0e0e0");
+
+    label.style("opacity", 0.1)
+        .style("fill", "#cccccc");
+
+    // Highlight nodes, links, and labels that are part of cliques
     cliques.forEach(clique => {
         clique.forEach(nodeId => {
-            d3.select(`path[data-id='${nodeId}']`)
+            // Select nodes in the clique and highlight them
+            d3.selectAll(`path[data-id='${nodeId}']`)
                 .attr("stroke", "red")
                 .attr("stroke-width", 2)
-                .style("opacity", 1);
-            d3.select(`text:contains('${nodeId}')`)
-                .style("opacity", 1);
+                .style("opacity", 1)
+                .attr("fill", d => color(d.community)); // Maintain color for highlighted nodes
+
+            // Select labels in the clique and highlight them
+            label.filter(d => d.id === nodeId)
+                .style("opacity", 1)
+                .style("fill", "#000"); // Standard black for highlighted labels
         });
+
+        // Highlight links between nodes in the same clique
+        link.filter(l => clique.includes(l.source.id) && clique.includes(l.target.id))
+            .style("opacity", 1)
+            .style("stroke", "#ccc"); // Standard stroke color for highlighted links
     });
+
     console.log("Cliques shown");
 }
+
+// Add event listener for the "Show Cliques" button
+
 
 // Reset highlighting function
 function resetHighlighting() {
