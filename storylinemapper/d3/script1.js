@@ -1,5 +1,3 @@
-
-// JavaScript code starts here
 const data = {json_data};
 const showActions = {show_actions};
 const width = window.innerWidth;
@@ -546,8 +544,10 @@ function highlightShortestPath() {
         return;
     }
 
-    link.style("stroke", l => shortestPath.includes(l.source.id) && shortestPath.includes(l.target.id) ? "red" : "#ccc")
+    node.style("opacity", n => shortestPath.includes(n.id) ? 1 : 0.1);
+    link.style("opacity", l => shortestPath.includes(l.source.id) && shortestPath.includes(l.target.id) ? 1 : 0.1)
         .style("stroke-width", l => shortestPath.includes(l.source.id) && shortestPath.includes(l.target.id) ? 2 : 1);
+    label.style("opacity", n => shortestPath.includes(n.id) ? 1 : 0.1);
 }
 
 function findShortestPath(source, target) {
@@ -600,11 +600,7 @@ function highlightNode(event, d) {
 
 document.addEventListener("click", function(event) {
     if (!event.target.closest(".nodes path") && !event.target.closest(".info-icon")) {
-        node.style("opacity", 1);
-        link.style("opacity", 1);
-        label.style("opacity", 1);
-        tooltip.style("opacity", 0);
-        d3.select(".tooltip").classed("sticky", false);
+        resetHighlighting();
     }
 });
 
@@ -643,30 +639,91 @@ function hideTooltip() {
 
 // Highlight K-cores function
 function highlightKCores() {
-    const kCores = d3.group(data.nodes, d => d.k_core);
-    kCores.forEach((nodes, k) => {
-        if (k > 1) {
-            nodes.forEach(node => {
-                d3.select(`path[data-id='${node.id}']`)
-                    .attr("fill", d3.rgb(color(node.community)).darker(k - 1));
-            });
-        }
-    });
+    const kCores = new Set(data.k_cores); // Convert array to Set for faster lookup
+    resetHighlighting(); // Reset the graph before highlighting
+
+    // Apply styles to k-core nodes
+    node.style("opacity", n => kCores.has(n.id) ? 1 : 0.1)
+        .attr("stroke", n => kCores.has(n.id) ? "blue" : null)
+        .attr("stroke-width", n => kCores.has(n.id) ? 2 : null);
+    
+    link.style("opacity", l => kCores.has(l.source.id) && kCores.has(l.target.id) ? 1 : 0.1);
+    label.style("opacity", n => kCores.has(n.id) ? 1 : 0.1);
+    
     console.log("K-cores highlighted");
 }
+
+function highlightAnomalies() {
+    console.log('Before set anomalies:', data.degree_anomalies);
+    console.log('Checking all data', data);
+    const anomalies = new Set(data.degree_anomalies); // Convert array to Set for faster lookup
+    console.log('Anomalies:', anomalies);
+    resetHighlighting(); // Reset the graph before highlighting
+
+    node.style("opacity", n => anomalies.has(n.id) ? 1 : 0.2) // Slightly faded for non-anomalous nodes
+    .style("stroke", n => anomalies.has(n.id) ? "red" : "#cccccc") // Grey stroke for non-anomalies
+    .style("stroke-width", n => anomalies.has(n.id) ? 2 : 1) // Thinner stroke for non-anomalies
+    .style("fill", n => anomalies.has(n.id) ? color(n.community) : "#cccccc") // Grey fill for non-anomalies
+    .attr("d", d3.symbol().type(d3.symbolCircle).size(n => anomalies.has(n.id) ? 64 : 64)); // Reset node shape
+
+// Update link styles: grey out if either end is not an anomaly
+link.style("opacity", l => (anomalies.has(l.source.id) && anomalies.has(l.target.id)) ? 1 : 0.2)
+    .style("stroke", l => (anomalies.has(l.source.id) && anomalies.has(l.target.id)) ? "#ccc" : "#e0e0e0"); // Lighter grey for non-anomalies
+
+// Update label styles: grey out non-anomalous node labels
+label.style("opacity", n => anomalies.has(n.id) ? 1 : 0.2) // Grey labels for non-anomalous nodes
+    .style("fill", n => anomalies.has(n.id) ? "#000" : "#cccccc"); // Grey text for non-anomalous nodes
+
+console.log("Anomalies highlighted");
+}
+
+
+document.getElementById("anomaly-detection-btn").addEventListener("click", highlightAnomalies);
+
+console.log("Anomaly detection event listener added");
 
 // Show Cliques function
 function showCliques() {
     const cliques = data.cliques;
+    resetHighlighting(); // Reset the graph before highlighting
+    node.style("opacity", 0.1);
+    link.style("opacity", 0.1);
+    label.style("opacity", 0.1);
     cliques.forEach(clique => {
         clique.forEach(nodeId => {
             d3.select(`path[data-id='${nodeId}']`)
                 .attr("stroke", "red")
-                .attr("stroke-width", 2);
+                .attr("stroke-width", 2)
+                .style("opacity", 1);
+            d3.select(`text:contains('${nodeId}')`)
+                .style("opacity", 1);
         });
     });
     console.log("Cliques shown");
 }
+
+// Reset highlighting function
+function resetHighlighting() {
+    node.style("opacity", 1)
+        .attr("stroke", null)
+        .attr("stroke-width", null)
+        .attr("fill", d => color(d.community));
+    link.style("opacity", 1)
+        .style("stroke", "#ccc")
+        .style("stroke-width", 1);
+    label.style("opacity", 1);
+    d3.select(".tooltip").classed("sticky", false);
+    tooltip.style("opacity", 0);
+}
+
+document.addEventListener("click", function(event) {
+    if (!event.target.closest(".nodes path") && !event.target.closest(".info-icon")) {
+        resetHighlighting();
+    }
+});
+
+console.log("Highlight node functionality added");
+
 
 // Ensure ngraph libraries are loaded before using them
 function loadScript(url, callback) {
