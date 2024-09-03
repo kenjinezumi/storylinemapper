@@ -40,11 +40,18 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
               "eigenvector_centrality": metrics["eigenvector_centrality"].get(node, 0),
               "effective_size": metrics["effective_size"].get(node, 0)} for node, data in G.nodes(data=True)]
     links = [{"source": u, "target": v, "actions": data["actions"]} for u, v, data in G.edges(data=True)]
-    
+    degree_anomalies = metrics["degree_anomaly"]
+    k_cores = metrics["k_cores"]
+    shortest_paths = metrics['shortest_paths']
+    shortest_paths_edges = metrics['shortest_path_edges']
     data_nodes = {
         "nodes": nodes,
         "links": links,
-        "community_names": community_names
+        "community_names": community_names,
+        "degree_anomalies": degree_anomalies,
+        "k_cores": k_cores,
+        "shortest_paths": shortest_paths,
+        "shortest_path_edges":  shortest_paths_edges
     }
 
     json_data = json.dumps(data_nodes)
@@ -129,17 +136,17 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
 </div>
 <div class="option-panel" id="analysis-options">
     <h4>Analysis</h4>
-    <button id="anomaly-detection-btn">Anomaly Detection</button>
-    <button id="show-cliques-btn">Show Cliques</button>
+    <button id="anomaly-detection-btn">Highlight outliers</button>
     <button id="highlight-k-core-btn">Highlight K-cores</button>
-    <input type="text" id="source-node" placeholder="Source Node">
-    <input type="text" id="target-node" placeholder="Target Node">
-    <button id="highlight-path-btn">Highlight Shortest Path</button>
+    <input type="text" id="search-node" placeholder="Search Node"> <!-- New search input -->
+    <button id="search-node-btn">Search</button> <!-- New search button -->
+    <button id="reset-btn">Reset</button> 
 </div>
 <div class="option-panel" id="export-options">
     <h4>Export</h4>
     <button id="export-svg-btn">Export as SVG</button>
     <button id="export-png-btn">Export as PNG</button>
+
 </div>
 <div id="metrics"></div>
 <div id="loading-indicator" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.75); color: white; padding: 10px; border-radius: 5px; z-index: 1000;">

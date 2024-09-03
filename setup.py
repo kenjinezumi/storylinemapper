@@ -4,12 +4,12 @@ from setuptools import setup, find_packages
 
 setup(
     name="storylinemapper",
-    version="0.3.0",
+    version="0.3.1",
     description="A library to generate networks of characters and timelines based on text",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    author="Kenji T.",
-    author_email="your.email@example.com",
+    author="Kenji Tsuchiya",
+    author_email="kenjitsuchiya1@gmail.com",
     url="https://github.com/kenjinezumi/storylinemapper",
     packages=find_packages(),
     install_requires=[
@@ -18,6 +18,11 @@ setup(
         "spacy>=3.5,<4.0",
         "plotly>=5.0,<6.0",
         "numpy>=1.15.0",
+        "scikit-learn>=1.2,<2.0",
+        "python-louvain>=0.16",
+       "infomap>=1.5.0,<2.0",
+        "community",
+        "infomap"
     ],
     entry_points={
         "console_scripts": [

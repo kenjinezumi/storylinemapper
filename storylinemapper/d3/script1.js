@@ -1,5 +1,3 @@
-
-// JavaScript code starts here
 const data = {json_data};
 const showActions = {show_actions};
 const width = window.innerWidth;
@@ -26,14 +24,24 @@ const colorSets = [
 // Default color set
 let currentColorSet = colorSets[0];
 
+// States
+let isKCoresHighlighted = false;
+let isAnomaliesHighlighted = false;
+let isNodeSearched = false;
+
 // Function to update colors based on selected color set
 function updateColors() {
     const colorSetIndex = document.getElementById("color-set").value;
     currentColorSet = colorSets[colorSetIndex];
     color.domain(d3.range(currentColorSet.length));
     color.range(currentColorSet);
+    
+    // Explicitly reapply node colors based on community using the updated color scale
+    node.attr("fill", d => color(d.community));
+    
     updateDesign();
 }
+
 
 // Color scale for communities
 const color = d3.scaleOrdinal(currentColorSet);
@@ -256,7 +264,8 @@ function ticked() {
         .attr("y2", d => d.target.y);
 
     node
-        .attr("transform", d => `translate(${d.x},${d.y})`);
+        .attr("transform", d => `translate(${d.x},${d.y})`)
+        .attr("fill", d => color(d.community)); // Reapply color on tick
 
     label
         .attr("x", d => d.x)
@@ -264,6 +273,7 @@ function ticked() {
 
     updateCommunityLabels();
 }
+
 
 console.log("Simulation tick added");
 
@@ -506,9 +516,7 @@ document.getElementById("analysis-btn").addEventListener("click", function() {
 document.getElementById("export-btn").addEventListener("click", function() {
     togglePanel("export-options");
 });
-document.getElementById("highlight-path-btn").addEventListener("click", highlightShortestPath);
 document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCores);
-document.getElementById("show-cliques-btn").addEventListener("click", showCliques);
 
 document.getElementById("color-set").addEventListener("change", updateColors);
 document.getElementById("node-size-slider").addEventListener("input", updateDesign);
@@ -530,8 +538,74 @@ function togglePanel(panelId) {
     }
 }
 
-// Add logic for highlighting shortest path
+// Function to find shortest path using precomputed data
+function findShortestPath(sourceNode, targetNode) {
+    // Initialize distances and previous nodes
+    const distances = {};
+    const previousNodes = {};
+    const nodesQueue = new Set(data.nodes.map(node => node.id));
+
+    // Set initial distances to infinity except for the source node
+    data.nodes.forEach(node => {
+        distances[node.id] = node.id === sourceNode ? 0 : Infinity;
+        previousNodes[node.id] = null;
+    });
+
+    while (nodesQueue.size) {
+        // Find the node with the smallest distance
+        let closestNode = null;
+        let smallestDistance = Infinity;
+        nodesQueue.forEach(nodeId => {
+            if (distances[nodeId] < smallestDistance) {
+                closestNode = nodeId;
+                smallestDistance = distances[nodeId];
+            }
+        });
+
+        if (closestNode === targetNode) break; // We found the shortest path to the target
+
+        // Remove the closest node from the queue
+        nodesQueue.delete(closestNode);
+
+        // Update distances for neighbors of the closest node
+        const currentNode = data.nodes.find(n => n.id === closestNode);
+        const neighbors = data.links
+            .filter(link => link.source.id === closestNode || link.target.id === closestNode)
+            .map(link => link.source.id === closestNode ? link.target : link.source);
+
+        neighbors.forEach(neighbor => {
+            if (!nodesQueue.has(neighbor.id)) return; // Skip if neighbor is not in queue
+
+            const altDistance = distances[closestNode] + 1; // Assuming all edges have weight 1
+            if (altDistance < distances[neighbor.id]) {
+                distances[neighbor.id] = altDistance;
+                previousNodes[neighbor.id] = closestNode;
+            }
+        });
+    }
+
+    // Reconstruct the shortest path
+    const path = [];
+    let currentNodeId = targetNode;
+    while (currentNodeId) {
+        path.unshift(currentNodeId);
+        currentNodeId = previousNodes[currentNodeId];
+    }
+
+    return path.length > 1 ? path : null; // Return null if no path found
+}
+
+// Update the highlightShortestPath function to use findShortestPath
 function highlightShortestPath() {
+    console.log('The shortest path edges is: ', data.shortest_path_edges);
+
+    if (!data || !data.shortest_path_edges || !Array.isArray(data.shortest_path_edges)) {
+        console.error("Error: 'data.shortest_path_edges' is not defined, or 'data' itself is not initialized correctly.");
+        console.error("Current state of 'data':", data); // Log the current state of 'data' for debugging
+        alert("Data is not properly loaded. Please check your data source.");
+        return; // Early return to prevent further errors
+    }
+
     const sourceNode = document.getElementById("source-node").value;
     const targetNode = document.getElementById("target-node").value;
 
@@ -541,52 +615,37 @@ function highlightShortestPath() {
     }
 
     const shortestPath = findShortestPath(sourceNode, targetNode);
+
     if (!shortestPath) {
         alert(`No path found between ${sourceNode} and ${targetNode}.`);
         return;
     }
 
-    link.style("stroke", l => shortestPath.includes(l.source.id) && shortestPath.includes(l.target.id) ? "red" : "#ccc")
-        .style("stroke-width", l => shortestPath.includes(l.source.id) && shortestPath.includes(l.target.id) ? 2 : 1);
-}
+    console.log('Found this shortest path', shortestPath);
 
-function findShortestPath(source, target) {
-    const graph = new Map();
-    data.nodes.forEach(node => graph.set(node.id, []));
-    data.links.forEach(link => {
-        graph.get(link.source).push(link.target);
-        graph.get(link.target).push(link.source);
-    });
-
-    const queue = [source];
-    const visited = new Set();
-    const predecessor = {};
-
-    while (queue.length > 0) {
-        const current = queue.shift();
-        if (current === target) {
-            const path = [];
-            let step = target;
-            while (step !== source) {
-                path.unshift(step);
-                step = predecessor[step];
-            }
-            path.unshift(source);
-            return path;
-        }
-        graph.get(current).forEach(neighbor => {
-            if (!visited.has(neighbor)) {
-                visited.add(neighbor);
-                predecessor[neighbor] = current;
-                queue.push(neighbor);
-            }
-        });
+    // Create a set of node pairs for the shortest path edges
+    const pathPairs = new Set();
+    for (let i = 0; i < shortestPath.length - 1; i++) {
+        pathPairs.add(`${shortestPath[i]}-${shortestPath[i + 1]}`);
+        pathPairs.add(`${shortestPath[i + 1]}-${shortestPath[i]}`); // Include both directions
     }
 
-    return null;
+    // Highlight nodes that are part of the shortest path
+    node.style("fill", n => shortestPath.includes(n.id) ? color(n.community) : "#ccc")
+        .style("opacity", n => shortestPath.includes(n.id) ? 1 : 0.1);
+
+    // Highlight links that are part of the shortest path
+    link.style("stroke", l => pathPairs.has(`${l.source.id}-${l.target.id}`) || pathPairs.has(`${l.target.id}-${l.source.id}`) ? "#999" : "#ccc")
+        .style("stroke-width", l => pathPairs.has(`${l.source.id}-${l.target.id}`) || pathPairs.has(`${l.target.id}-${l.source.id}`) ? 2 : 1)
+        .style("opacity", l => pathPairs.has(`${l.source.id}-${l.target.id}`) || pathPairs.has(`${l.target.id}-${l.source.id}`) ? 1 : 0.1);
+
+    // Highlight labels for nodes that are part of the shortest path
+    label.style("fill", n => shortestPath.includes(n.id) ? "#000" : "#ccc")
+        .style("opacity", n => shortestPath.includes(n.id) ? 1 : 0.1);
 }
 
-console.log("Shortest path functionality added");
+
+
 
 // Highlight node function
 function highlightNode(event, d) {
@@ -600,11 +659,7 @@ function highlightNode(event, d) {
 
 document.addEventListener("click", function(event) {
     if (!event.target.closest(".nodes path") && !event.target.closest(".info-icon")) {
-        node.style("opacity", 1);
-        link.style("opacity", 1);
-        label.style("opacity", 1);
-        tooltip.style("opacity", 0);
-        d3.select(".tooltip").classed("sticky", false);
+        resetHighlighting();
     }
 });
 
@@ -641,32 +696,220 @@ function hideTooltip() {
     }
 }
 
+// Function to highlight the searched node
+function highlightSearchedNode() {
+    const searchInput = document.getElementById("search-node").value.trim(); // Get the search input
+    if (!searchInput) {
+        alert("Please enter a node ID to search for.");
+        return;
+    }
+
+    if (isNodeSearched) {
+        resetHighlighting();
+    } else {
+        // Find the node with the matching ID
+        const foundNode = data.nodes.find(node => node.id === searchInput);
+
+        if (!foundNode) {
+            alert(`No node found with ID: ${searchInput}`);
+            return;
+        }
+
+        // Highlight the searched node and grey out others
+        node.style("opacity", n => n.id === foundNode.id ? 1 : 0.1)
+            .attr("fill", n => n.id === foundNode.id ? color(n.community) : "#cccccc"); // Grey out non-searched nodes
+
+        link.style("opacity", l => (l.source.id === foundNode.id || l.target.id === foundNode.id) ? 1 : 0.1)
+            .style("stroke", l => (l.source.id === foundNode.id || l.target.id === foundNode.id) ? "#999" : "#e0e0e0");
+
+        label.style("opacity", n => n.id === foundNode.id ? 1 : 0.1)
+            .style("fill", n => n.id === foundNode.id ? "#000" : "#cccccc");
+
+        console.log("Node searched and highlighted");
+    }
+
+    isNodeSearched = !isNodeSearched;
+}
+
+
+// Event listener for the search button
+document.getElementById("search-node-btn").addEventListener("click", highlightSearchedNode);
+
+
+
 // Highlight K-cores function
 function highlightKCores() {
-    const kCores = d3.group(data.nodes, d => d.k_core);
-    kCores.forEach((nodes, k) => {
-        if (k > 1) {
-            nodes.forEach(node => {
-                d3.select(`path[data-id='${node.id}']`)
-                    .attr("fill", d3.rgb(color(node.community)).darker(k - 1));
-            });
-        }
-    });
-    console.log("K-cores highlighted");
+    if (isKCoresHighlighted) {
+        resetHighlighting();
+    } else {
+        console.log('Before set kCores:', data.k_cores);
+        console.log('Checking all data', data);
+        const kCores = new Set(data.k_cores); // Convert array to Set for faster lookup
+        console.log('K-cores:', kCores);
+        resetHighlighting(); // Reset the graph before highlighting
+
+        // Apply styles to k-core nodes and grey out non-k-core nodes
+        node.style("opacity", n => kCores.has(n.id) ? 1 : 0.2)  // Slightly faded for non-k-core nodes
+            .style("fill", n => kCores.has(n.id) ? color(n.community) : "#cccccc")  // Grey fill for non-k-core nodes
+            .attr("d", d3.symbol().type(d3.symbolCircle).size(n => kCores.has(n.id) ? 64 : 64)); // Reset node shape
+
+        // Update link styles: grey out if either end is not in k-core
+        link.style("opacity", l => (kCores.has(l.source.id) && kCores.has(l.target.id)) ? 1 : 0.2)
+            .style("stroke", l => (kCores.has(l.source.id) && kCores.has(l.target.id)) ? "#ccc" : "#e0e0e0"); // Lighter grey for non-k-core links
+
+        // Update label styles: grey out non-k-core node labels
+        label.style("opacity", n => kCores.has(n.id) ? 1 : 0.2)  // Grey labels for non-k-core nodes
+            .style("fill", n => kCores.has(n.id) ? "#000" : "#cccccc");  // Grey text for non-k-core nodes
+
+        console.log("K-cores highlighted");
+    }
+
+    isKCoresHighlighted = !isKCoresHighlighted;
 }
+
+
+// Add event listener for the "Show K-Cores" button
+document.getElementById("highlight-k-core-btn").addEventListener("click", highlightKCores);
+
+
+function highlightAnomalies() {
+    if (isAnomaliesHighlighted) {
+        resetHighlighting();
+    } else {
+        console.log('Before set anomalies:', data.degree_anomalies);
+        console.log('Checking all data', data);
+        const anomalies = new Set(data.degree_anomalies); // Convert array to Set for faster lookup
+        console.log('Anomalies:', anomalies);
+        resetHighlighting(); // Reset the graph before highlighting
+
+        node.style("opacity", n => anomalies.has(n.id) ? 1 : 0.2) // Slightly faded for non-anomalous nodes
+            .style("fill", n => anomalies.has(n.id) ? color(n.community) : "#cccccc") // Grey fill for non-anomalies
+            .attr("d", d3.symbol().type(d3.symbolCircle).size(n => anomalies.has(n.id) ? 64 : 64)); // Reset node shape
+
+        // Update link styles: grey out if either end is not an anomaly
+        link.style("opacity", l => (anomalies.has(l.source.id) && anomalies.has(l.target.id)) ? 1 : 0.2)
+            .style("stroke", l => (anomalies.has(l.source.id) && anomalies.has(l.target.id)) ? "#ccc" : "#e0e0e0"); // Lighter grey for non-anomalies
+
+        // Update label styles: grey out non-anomalous node labels
+        label.style("opacity", n => anomalies.has(n.id) ? 1 : 0.2) // Grey labels for non-anomalous nodes
+            .style("fill", n => anomalies.has(n.id) ? "#000" : "#cccccc"); // Grey text for non-anomalous nodes
+
+        console.log("Anomalies highlighted");
+    }
+
+    isAnomaliesHighlighted = !isAnomaliesHighlighted;
+}
+
+
+document.getElementById("anomaly-detection-btn").addEventListener("click", highlightAnomalies);
+
+console.log("Anomaly detection event listener added");
 
 // Show Cliques function
 function showCliques() {
-    const cliques = data.cliques;
+    const cliques = data.cliques; // Assumes cliques are an array of arrays with node IDs
+    resetHighlighting(); // Reset the graph before highlighting
+
+    // Grey out all nodes, links, and labels initially
+    node.style("opacity", 0.1)
+        .attr("stroke", "#cccccc")
+        .attr("stroke-width", 1)
+        .attr("fill", "#cccccc");
+
+    link.style("opacity", 0.1)
+        .style("stroke", "#e0e0e0");
+
+    label.style("opacity", 0.1)
+        .style("fill", "#cccccc");
+
+    // Highlight nodes, links, and labels that are part of cliques
     cliques.forEach(clique => {
         clique.forEach(nodeId => {
-            d3.select(`path[data-id='${nodeId}']`)
+            // Select nodes in the clique and highlight them
+            d3.selectAll(`path[data-id='${nodeId}']`)
                 .attr("stroke", "red")
-                .attr("stroke-width", 2);
+                .attr("stroke-width", 2)
+                .style("opacity", 1)
+                .attr("fill", d => color(d.community)); // Maintain color for highlighted nodes
+
+            // Select labels in the clique and highlight them
+            label.filter(d => d.id === nodeId)
+                .style("opacity", 1)
+                .style("fill", "#000"); // Standard black for highlighted labels
         });
+
+        // Highlight links between nodes in the same clique
+        link.filter(l => clique.includes(l.source.id) && clique.includes(l.target.id))
+            .style("opacity", 1)
+            .style("stroke", "#ccc"); // Standard stroke color for highlighted links
     });
+
     console.log("Cliques shown");
 }
+
+// Add event listener for the "Show Cliques" button
+
+
+// Reset highlighting function
+function resetHighlighting() {
+    // Reset node styles to default settings
+    node.style("opacity", 1) // Reset opacity to fully visible
+        .attr("stroke", null) // Remove any custom stroke color
+        .attr("stroke-width", 1) // Reset stroke width to default
+        .attr("fill", d => color(d.community)) // Reset fill color to community color
+        .attr("d", d3.symbol().type(d3.symbolCircle).size(d => d.size * 10)); // Reset to default size and shape
+
+    // Remove any additional elements like extra circles or highlights
+    svg.selectAll(".extra-circle").remove();
+
+    // Reset link styles to default settings
+    link.style("opacity", 1) // Reset opacity to fully visible
+        .style("stroke", "#ccc") // Default link color
+        .style("stroke-width", 1) // Default link width
+        .style("stroke-dasharray", "none"); // Remove any custom dash styles
+
+    // Reset label styles to default settings
+    label.style("opacity", 1) // Reset opacity to fully visible
+        .style("fill", "#000"); // Default label color
+
+    // Reset tooltips and remove any "sticky" state
+    d3.select(".tooltip").classed("sticky", false); // Ensure tooltip is not sticky
+    tooltip.style("opacity", 0); // Hide tooltip
+
+    // Reset state variables to their default values
+    isKCoresHighlighted = false;
+    isAnomaliesHighlighted = false;
+    isNodeSearched = false;
+
+    // Reset any additional elements like action labels
+    svg.selectAll(".link-labels text").style("opacity", 1); // Ensure action labels are visible
+
+    // Reapply the default color set and color scale
+    currentColorSet = colorSets[0]; // Reset to default color set
+    color.domain(d3.range(currentColorSet.length)).range(currentColorSet); // Update color scale domain and range
+
+    // Explicitly reapply node colors using the updated color scale
+    node.attr("fill", d => color(d.community)); // Ensure nodes are colored by community
+
+    // Restart the D3 simulation with default force settings
+    simulation
+        .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
+        .force("charge", d3.forceManyBody().strength(-30))
+        .force("collision", d3.forceCollide().radius(d => d.size * 2 + 5))
+        .on("tick", ticked)
+        .alpha(1) // Reset alpha to kickstart simulation again
+        .restart(); // Restart the simulation to reapply all forces
+
+    console.log("Graph reset to default styling");
+}
+
+
+
+// Event listener for the reset button
+document.getElementById("reset-btn").addEventListener("click", resetHighlighting);
+
+
+
 
 // Ensure ngraph libraries are loaded before using them
 function loadScript(url, callback) {
@@ -1422,6 +1665,97 @@ function applyManualOpenOrdLayout(data, width, height, callback) {
 
 
 document.getElementById("layout-select").addEventListener("change", updateLayout);
+
+// Function to export the network graph as SVG
+function exportAsSVG() {
+    const svgElement = document.querySelector("svg");
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svgElement);
+
+    const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "network.svg";
+    link.click();
+}
+
+// Function to export the network graph as PNG
+function exportAsPNG() {
+    const svgElement = document.querySelector("svg");
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svgElement);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = function() {
+        canvas.width = svgElement.clientWidth;
+        canvas.height = svgElement.clientHeight;
+        context.drawImage(img, 0, 0);
+        const url = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "network.png";
+        link.click();
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(source);
+}
+
+// Event listeners for export buttons
+document.getElementById("export-svg-btn").addEventListener("click", exportAsSVG);
+document.getElementById("export-png-btn").addEventListener("click", exportAsPNG);
+
+// Function to export the network graph as an iframe
+function exportAsIframe() {
+    const svgElement = document.querySelector("svg");
+    const serializer = new XMLSerializer();
+    const svgSource = serializer.serializeToString(svgElement);
+
+    // Create the HTML content for the iframe
+    const iframeContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f9f9f9; /* Optional: set a background color */
+            }
+            svg {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        ${svgSource}
+    </body>
+    </html>
+    `;
+
+    // Create a Blob with the iframe content
+    const blob = new Blob([iframeContent], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+
+    // Create a download link for the iframe HTML file
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "network_iframe.html";
+    link.click();
+
+    // Clean up the URL object after download
+    URL.revokeObjectURL(url);
+}
+
+// Event listener for the new export iframe button
 
 // Default initialization with D3 force layout
 runLayoutWithIndicator(applyD3ForceLayout);

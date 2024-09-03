@@ -1,5 +1,3 @@
-# storylinemapper/network_analysis/metrics.py
-
 import networkx as nx
 from . import path, centrality, structural_hole, subgraph, anomaly
 from networkx.algorithms import clique, core, components
@@ -8,7 +6,22 @@ def calculate_all_metrics(G):
     metrics = {}
 
     # Path analysis
-    metrics['shortest_paths'] = dict(path.all_pairs_shortest_path(G))
+    shortest_paths = dict(path.all_pairs_shortest_path(G))
+    metrics['shortest_paths'] = shortest_paths
+
+    # Initialize an empty set to store edges that are part of any shortest path
+    shortest_path_edges = set()
+
+    # Identify edges in shortest paths
+    for source in shortest_paths:
+        for target in shortest_paths[source]:
+            if source != target:  # Ignore self-loops
+                path_edges = list(nx.utils.pairwise(shortest_paths[source][target]))
+                shortest_path_edges.update(path_edges)
+
+    # Store shortest path edges in the metrics
+    metrics['shortest_path_edges'] = list(shortest_path_edges)
+
     if nx.is_connected(G):
         metrics['average_shortest_path_length'] = path.average_shortest_path_length(G)
         metrics['diameter'] = path.diameter(G)
@@ -17,7 +30,7 @@ def calculate_all_metrics(G):
         components_list = list(components.connected_components(G))
         avg_path_lengths = []
         diameters = []
-        for component in components_list:  # Use components_list here
+        for component in components_list:
             subgraph = G.subgraph(component)
             avg_path_lengths.append(nx.average_shortest_path_length(subgraph))
             diameters.append(nx.diameter(subgraph))
