@@ -29,7 +29,7 @@ Before you start, ensure you have the following prerequisites installed on your 
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/storylinemapper.git
+   git clone https://github.com/kenjinezumi/storylinemapper.git
    cd storylinemapper
 
 2. **Install required dependencies:**:
