@@ -660,21 +660,21 @@ function highlightAnomalies() {
     console.log('Anomalies:', anomalies);
     resetHighlighting(); // Reset the graph before highlighting
 
-    node.style("opacity", n => anomalies.has(n.id) ? 1 : 0.2) // Slightly faded for non-anomalous nodes
-    .style("stroke", n => anomalies.has(n.id) ? "red" : "#cccccc") // Grey stroke for non-anomalies
-    .style("stroke-width", n => anomalies.has(n.id) ? 2 : 1) // Thinner stroke for non-anomalies
-    .style("fill", n => anomalies.has(n.id) ? color(n.community) : "#cccccc") // Grey fill for non-anomalies
-    .attr("d", d3.symbol().type(d3.symbolCircle).size(n => anomalies.has(n.id) ? 64 : 64)); // Reset node shape
+     node.style("opacity", n => anomalies.has(n.id) ? 1 : 0.2) // Slightly faded for non-anomalous nodes
+        .style("stroke", n => anomalies.has(n.id) ? "red" : "#cccccc") // Grey stroke for non-anomalies
+        .style("stroke-width", n => anomalies.has(n.id) ? 2 : 1) // Thinner stroke for non-anomalies
+        .style("fill", n => anomalies.has(n.id) ? color(n.community) : "#cccccc") // Grey fill for non-anomalies
+        .attr("d", d3.symbol().type(d3.symbolCircle).size(n => anomalies.has(n.id) ? 64 : 64)); // Reset node shape
 
-// Update link styles: grey out if either end is not an anomaly
-link.style("opacity", l => (anomalies.has(l.source.id) && anomalies.has(l.target.id)) ? 1 : 0.2)
-    .style("stroke", l => (anomalies.has(l.source.id) && anomalies.has(l.target.id)) ? "#ccc" : "#e0e0e0"); // Lighter grey for non-anomalies
+    // Update link styles: grey out if either end is not an anomaly
+    link.style("opacity", l => (anomalies.has(l.source.id) && anomalies.has(l.target.id)) ? 1 : 0.2)
+        .style("stroke", l => (anomalies.has(l.source.id) && anomalies.has(l.target.id)) ? "#ccc" : "#e0e0e0"); // Lighter grey for non-anomalies
 
-// Update label styles: grey out non-anomalous node labels
-label.style("opacity", n => anomalies.has(n.id) ? 1 : 0.2) // Grey labels for non-anomalous nodes
-    .style("fill", n => anomalies.has(n.id) ? "#000" : "#cccccc"); // Grey text for non-anomalous nodes
-
-console.log("Anomalies highlighted");
+    // Update label styles: grey out non-anomalous node labels
+    label.style("opacity", n => anomalies.has(n.id) ? 1 : 0.2) // Grey labels for non-anomalous nodes
+        .style("fill", n => anomalies.has(n.id) ? "#000" : "#cccccc"); // Grey text for non-anomalous nodes
+    
+    console.log("Anomalies highlighted");
 }
 
 

@@ -41,11 +41,20 @@ def generate_html(G, partition: dict, community_names: dict, title: str = "Entit
               "effective_size": metrics["effective_size"].get(node, 0)} for node, data in G.nodes(data=True)]
     links = [{"source": u, "target": v, "actions": data["actions"]} for u, v, data in G.edges(data=True)]
     degree_anomalies = metrics["degree_anomaly"]
+    k_cores = metrics["k_cores"]
+    cliques = metrics["cliques"] 
+    bridges = metrics["bridges"]
+    shortest_paths = metrics['shortest_paths']
+
     data_nodes = {
         "nodes": nodes,
         "links": links,
         "community_names": community_names,
-        "degree_anomalies": degree_anomalies
+        "degree_anomalies": degree_anomalies,
+        "k_cores": k_cores,
+        "cliques": cliques,
+        "bridges": bridges, 
+        "shortest_paths": shortest_paths
     }
 
     json_data = json.dumps(data_nodes)
