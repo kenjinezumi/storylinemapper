@@ -2,6 +2,9 @@
 
 `StorylineMapper` is a Python tool for performing community detection on narrative texts. It uses advanced network analysis techniques to identify and visualize relationships and communities within the text, helping to uncover hidden connections and structures.
 
+![Example](media/example.png)
+
+
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
@@ -16,7 +19,7 @@
 
 Before you start, ensure you have the following prerequisites installed on your machine:
 
-- **Python 3.7+**: Make sure Python is installed and added to your system's PATH.
+- **Python 3.12+**: Make sure Python is installed and added to your system's PATH.
 - **pip**: Python's package installer should also be installed.
 
 ## Installation
@@ -30,6 +33,8 @@ Before you start, ensure you have the following prerequisites installed on your 
     ```bash
     pip install -r requirements.txt
     pip install -e .
+    python -m spacy download en_core_web_sm
+
 
 3. **Usage:**
 

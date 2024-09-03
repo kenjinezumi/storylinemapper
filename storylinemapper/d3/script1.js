@@ -852,56 +852,58 @@ function showCliques() {
 
 // Reset highlighting function
 function resetHighlighting() {
-    // Reset node styles
-    node.style("opacity", 1)
+    // Reset node styles to default settings
+    node.style("opacity", 1) // Reset opacity to fully visible
         .attr("stroke", null) // Remove any custom stroke color
         .attr("stroke-width", 1) // Reset stroke width to default
-        .attr("fill", d => color(d.community)) // Reset node color to default community color
-        .attr("d", d3.symbol().type(d3.symbolCircle).size(d => d.size * 10)); // Reset node shape and size if changed
+        .attr("fill", d => color(d.community)) // Reset fill color to community color
+        .attr("d", d3.symbol().type(d3.symbolCircle).size(d => d.size * 10)); // Reset to default size and shape
 
-    // Ensure all additional circle elements are removed
+    // Remove any additional elements like extra circles or highlights
     svg.selectAll(".extra-circle").remove();
 
-    // Reset link styles
-    link.style("opacity", 1)
-        .style("stroke", "#ccc")  // Reset to default link color
-        .style("stroke-width", 1) // Reset to default link width
+    // Reset link styles to default settings
+    link.style("opacity", 1) // Reset opacity to fully visible
+        .style("stroke", "#ccc") // Default link color
+        .style("stroke-width", 1) // Default link width
         .style("stroke-dasharray", "none"); // Remove any custom dash styles
 
-    // Reset label styles
-    label.style("opacity", 1)
-        .style("fill", "#000");  // Reset label color to default
+    // Reset label styles to default settings
+    label.style("opacity", 1) // Reset opacity to fully visible
+        .style("fill", "#000"); // Default label color
 
-    // Reset tooltips
-    d3.select(".tooltip").classed("sticky", false);
-    tooltip.style("opacity", 0);
+    // Reset tooltips and remove any "sticky" state
+    d3.select(".tooltip").classed("sticky", false); // Ensure tooltip is not sticky
+    tooltip.style("opacity", 0); // Hide tooltip
 
-    // Reset state variables
+    // Reset state variables to their default values
     isKCoresHighlighted = false;
     isAnomaliesHighlighted = false;
     isNodeSearched = false;
 
     // Reset any additional elements like action labels
-    svg.selectAll(".link-labels text").style("opacity", 1);  // Reset action label visibility if applicable
+    svg.selectAll(".link-labels text").style("opacity", 1); // Ensure action labels are visible
 
-    // Reset color set to default if needed
-    currentColorSet = colorSets[0];
-    color.domain(d3.range(currentColorSet.length)).range(currentColorSet);
+    // Reapply the default color set and color scale
+    currentColorSet = colorSets[0]; // Reset to default color set
+    color.domain(d3.range(currentColorSet.length)).range(currentColorSet); // Update color scale domain and range
 
-    // Explicitly reapply node colors based on community using the updated color scale
-    node.attr("fill", d => color(d.community));
+    // Explicitly reapply node colors using the updated color scale
+    node.attr("fill", d => color(d.community)); // Ensure nodes are colored by community
 
-    // Reapply the default simulation settings
+    // Restart the D3 simulation with default force settings
     simulation
         .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
         .force("charge", d3.forceManyBody().strength(-30))
         .force("collision", d3.forceCollide().radius(d => d.size * 2 + 5))
         .on("tick", ticked)
-        .alpha(1)
-        .restart();
+        .alpha(1) // Reset alpha to kickstart simulation again
+        .restart(); // Restart the simulation to reapply all forces
 
     console.log("Graph reset to default styling");
 }
+
+
 
 // Event listener for the reset button
 document.getElementById("reset-btn").addEventListener("click", resetHighlighting);
@@ -1754,7 +1756,6 @@ function exportAsIframe() {
 }
 
 // Event listener for the new export iframe button
-document.getElementById("export-iframe-btn").addEventListener("click", exportAsIframe);
 
 // Default initialization with D3 force layout
 runLayoutWithIndicator(applyD3ForceLayout);
