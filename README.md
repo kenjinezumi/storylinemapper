@@ -2,6 +2,9 @@
 
 `StorylineMapper` is a Python tool for performing community detection on narrative texts. It uses advanced network analysis techniques to identify and visualize relationships and communities within the text, helping to uncover hidden connections and structures.
 
+https://pypi.org/project/storylinemapper/0.3.1/
+
+
 ![Example](media/example.png)
 
 
